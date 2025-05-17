@@ -827,189 +827,103 @@ carrinho.method = {
 
     // ------ REALIZAR PEDIDO ------
 
-   // botão de realizar o pedido
-   fazerPedido: () => {
-    if (CARRINHO_ATUAL.length > 0) {
-        // Validações
-        let checkEntrega = document.querySelector('#chkEntrega').checked;
-        let checkRetirada = document.querySelector('#chkRetirada').checked;
+    // botão de realizar o pedido
+    fazerPedido: () => {
 
-        if (!checkEntrega && !checkRetirada) {
-            app.method.mensagem("Selecione entrega ou retirada.");
-            return;
-        }
+        if (CARRINHO_ATUAL.length > 0) {
 
-        // Obtém o endereço selecionado do localStorage
-        let enderecoAtual = app.method.obterValorSessao('address');
-        if (checkEntrega && enderecoAtual == undefined) {
-            app.method.mensagem("Informe o endereço de entrega.");
-            return;
-        }
-        let enderecoSelecionado = enderecoAtual != undefined ? JSON.parse(enderecoAtual) : null;
+            // faz as validações
 
-        let nome = $('#txtNomeSobrenome').val().trim();
-        let celular = $('#txtCelular').val().trim();
+            let checkEntrega = document.querySelector('#chkEntrega').checked;
+            let checkRetirada = document.querySelector('#chkRetirada').checked;
 
-        if (nome.length <= 0) {
-            app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
-            return;
-        }
-        if (celular.length <= 0) {
-            app.method.mensagem("Informe o Celular, por favor.");
-            return;
-        }
-        if (FORMA_SELECIONADA == null) {
-            app.method.mensagem("Selecione a forma de pagamento.");
-            return;
-        }
-
-        // Tudo ok, prossegue com o pedido
-        app.method.loading(true);
-
-        // Calcula o valor total do pedido
-        let valorTotal = 0;
-        CARRINHO_ATUAL.forEach(item => {
-            let subtotalItem = item.quantidade * item.valor;
-
-            // Adiciona o valor dos opcionais
-            if (item.opcionais && item.opcionais.length > 0) {
-                item.opcionais.forEach(opcional => {
-                    subtotalItem += item.quantidade * opcional.valoropcional;
-                });
+            if (!checkEntrega && !checkRetirada) {
+                app.method.mensagem("Selecione entrega ou retirada.")
+                return;
             }
 
-            valorTotal += subtotalItem;
-        });
+            // obtem o endereco selecionado do localstorage
+            let enderecoAtual = app.method.obterValorSessao('address');
 
-        // Adiciona a taxa de entrega (se aplicável)
-        if (checkEntrega) {
-            valorTotal += TAXA_ATUAL;
+            if (checkEntrega && enderecoAtual == undefined) {
+                app.method.mensagem("Informe o endereço de entrega.")
+                return;
+            }
+
+            let enderecoSelecionado = enderecoAtual != undefined ? JSON.parse(enderecoAtual) : null;
+
+            let nome = $('#txtNomeSobrenome').val().trim();
+            let celular = $('#txtCelular').val().trim();
+
+            if (nome.length <= 0) {
+                app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
+                return;
+            }
+
+            if (celular.length <= 0) {
+                app.method.mensagem("Informe o Celular, por favor.");
+                return;
+            }
+
+            if (FORMA_SELECIONADA == null) {
+                app.method.mensagem("Selecione a forma de pagamento.");
+                return;
+            }
+
+            // tudo ok, faz o pedido
+            app.method.loading(true);
+
+            var dados = {
+                entrega: checkEntrega,
+                retirada: checkRetirada,
+                cart: CARRINHO_ATUAL,
+                endereco: enderecoSelecionado,
+                idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
+                idtaxaentrega: TAXA_ATUAL_ID,
+                taxaentrega: TAXA_ATUAL,
+                idformapagamento: FORMA_SELECIONADA.idformapagamento,
+                troco: TROCO,
+                nomecliente: nome,
+                telefonecliente: celular
+            }
+
+            app.method.post('/pedido', JSON.stringify(dados),
+                (response) => {
+
+                    console.log('response', response)
+                    app.method.loading(false);
+
+                    if (response.status === 'error') {
+                        app.method.mensagem(response.message)
+                        return;
+                    }
+
+                    app.method.mensagem("Pedido realizado!", 'green');
+
+                    // salva o novo pedido
+                    dados.order = response.order;
+
+                    app.method.gravarValorSessao(JSON.stringify(dados), 'order');
+
+                    setTimeout(() => {
+                        // limpa o carrinho
+                        localStorage.removeItem('cart');
+                        window.location.href = '/pedido.html'
+                    }, 1000);
+
+                },
+                (error) => {
+                    console.log('error', error);
+                    app.method.loading(false);
+                }, true
+            );
+
+        }
+        else {
+            app.method.mensagem("Nenhum item no carrinho.");
         }
 
-        // Cria o objeto `dados`
-        var dados = {
-            entrega: checkEntrega,
-            retirada: checkRetirada,
-            cart: CARRINHO_ATUAL,
-            endereco: enderecoSelecionado,
-            idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
-            idtaxaentrega: TAXA_ATUAL_ID,
-            taxaentrega: TAXA_ATUAL,
-            idformapagamento: FORMA_SELECIONADA.idformapagamento,
-            troco: TROCO,
-            nomecliente: nome,
-            telefonecliente: celular,
-            total: valorTotal // Inclui o valor total calculado
-        };
-
-        // Faz a requisição para salvar o pedido
-        app.method.post('/pedido', JSON.stringify(dados),
-            (response) => {
-                console.log('response', response);
-                app.method.loading(false);
-
-                if (response.status === 'error') {
-                    app.method.mensagem(response.message);
-                    return;
-                }
-
-                app.method.mensagem("Pedido realizado!", 'green');
-
-                // Salva o novo pedido
-                dados.order = response.order;
-                app.method.gravarValorSessao(JSON.stringify(dados), 'order');
-
-                setTimeout(() => {
-                    // Limpa o carrinho
-                    localStorage.removeItem('cart');
-                    location.reload();
-                }, 1000);
-
-                // Chama a função para finalizar o pedido via WhatsApp
-                carrinho.method.finalizarPedido(dados);
-            },
-            (error) => {
-                console.log('error', error);
-                app.method.loading(false);
-            }, true
-        );
-    } else {
-        app.method.mensagem("Nenhum item no carrinho.");
-    }
-},    
-
-finalizarPedido: (dados) => {
-    var formaDePagamento = '';
-
-    // Definindo a forma de pagamento com base no id
-    switch (dados.idformapagamento) {
-        case 1:
-            formaDePagamento = 'PIX';
-            break;
-        case 2:
-            formaDePagamento = 'DINHEIRO';
-            break;
-        case 3:
-            formaDePagamento = 'CARTÃO DE CRÉDITO';
-            break;
-        case 4:
-            formaDePagamento = 'CARTÃO DE DÉBITO';
-            break;
-        default:
-            formaDePagamento = 'Não especificado';
-    }
-
-    // Construção da mensagem
-    var texto = `*Olá! Me chamo ${dados.nomecliente}, gostaria de fazer um pedido:*`;
-    texto += `\nMeu contato: *${dados.telefonecliente}*`;
-
-    texto += `\n\n*Produtos no carrinho:*`;
-    dados.cart.forEach((item) => {
-        texto += `\n${item.quantidade} x - *${item.nome}* \n R$${item.valor.toFixed(2)}`;
-
-        // Adiciona opcionais, se existirem
-        if (item.opcionais && item.opcionais.length > 0) {
-            texto += `\n  *Opcionais:*`;
-            item.opcionais.forEach((opcional) => {
-                texto += `\n    - ${item.quantidade}x ${opcional.nomeopcional} (+ R$ ${(item.quantidade * opcional.valoropcional).toFixed(2)})`;
-            });
-        }
-
-        // Adiciona observação, se existir
-        if (item.observacao && item.observacao.trim() !== '') {
-            texto += `\n\nObservação: ${item.observacao}`;
-        }
-    });
-
-    texto += `\n\nForma de pagamento:`;
-    texto += `\n*${formaDePagamento}*`;
-
-    if (dados.retirada) {
-        texto += `\n*Retirada no local*`;
-    } else {
-        texto += `\n*Entrega*`;
-
-        // Inclui o endereço de entrega se disponível
-        if (dados.endereco) {
-            texto += `\n*Endereço de entrega:* ${dados.endereco.endereco}, ${dados.endereco.numero} - ${dados.endereco.bairro}, ${dados.endereco.cidade} - ${dados.endereco.estado}`;
-        }
-
-        texto += `\nTaxa de entrega: R$${dados.taxaentrega.toFixed(2)}`;
-    }
-
-    if (dados.troco && dados.troco > 0) {
-        texto += `\nTroco para: R$${dados.troco.toFixed(2)}`;
-    }
-
-    if (dados.total && dados.total > 0) {
-        texto += `\n\n*Valor total do pedido:* R$${dados.total.toFixed(2)}`; // Adicionando valor total
-    }
-
-    let encode = encodeURIComponent(texto);
-    let URL = `https://wa.me/5533999014256?text=${encode}`;
-
-    window.location.href = URL;
-},
+    },
 
     // -------------------------------  
 

@@ -81,7 +81,6 @@
     border-bottom-left-radius: 15px;
 }
 
-
 .menu-item.active::before {
     content: "";
     height: 50px;
@@ -145,23 +144,6 @@ h1.title-page {
 
 .conteudo-inner {
     margin-top: 50px;
-    align-items: flex-end;
-    flex-direction: column;
-}
-
-.banner {
-    font-size: 20px;
-    flex: 1;
-    height: 520px;
-    position: relative;
-    top: 10px;
-    flex-direction: column;
-    color: black;
-}
- 
-.banner .text-banner {
-    font-size: 20px;
-    flex: 1;
 }
 
 /* Tela Pedidos */
@@ -205,10 +187,6 @@ h1.title-page {
     color: var(--color-black);
 }
 
-.itensPedido .price-total {
-    color: var(--color-black);
-}
-
 .info-pedido i {
     width: 25px;
     text-align: center;
@@ -236,7 +214,7 @@ h1.title-page {
     text-align: right;
     margin-bottom: 0px;
     margin-top: 15px;
-    color: var(--color-black);
+    color: var(--color-primary);
 }
 
 .card-pedido {
@@ -276,46 +254,9 @@ h1.title-page {
     cursor: pointer;
 }
 
-@media print {
-
-    * {
-        font-size: 14px;
-        position: relative;
-        left: -4px;
-        width: 200px;
-        size: 80mm auto;
-        padding: 3px;
-        color: black;
-        background-color: white;
-    }
-
-    .bg-menu * {
-      visibility: hidden;
-    }
-    .bg-menu .button {
-        visibility: hidden;
-    }
-    .no-print {
-        display: none;
-      }
-    .modal-body {
-        width: 80mm;
-        font-family: Arial, sans-serif;
-        margin: 20px;    
-    }
- 
-    @page {
-        background-color: #f4f4f4;    
-        margin: 0;
-        size: 80mm auto;
-    }
-  }
-
-
 .card-pedido-body {
     height: 140px;
 }
-
 
 /* Modal detalhes */
 
@@ -788,6 +729,7 @@ input:checked + .slider::before {
     color: var(--color-black);
 }
 
+
 .flex-hint {
     display: flex;
     justify-content: center;
@@ -824,3 +766,28 @@ input:checked + .slider::before {
     height: 520px;
 }
 
+/* Impressão */
+
+#container-action-footer {
+    justify-content: space-between;
+}
+
+.print * {
+    background: #FFF !important;
+    color: #000!important;
+}
+
+.print .card {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0px !important;
+    padding: 0px !important; 
+}
+
+.print .container-dados-pedido {
+    border-bottom: 1px solid #000;
+}
+
+.print .footer-btn {
+    display: none!important;
+}

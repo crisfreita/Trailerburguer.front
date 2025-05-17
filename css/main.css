@@ -62,7 +62,7 @@ b {
     left: 0px;
     right: 0px;
     height: 110px;
-    background-color: var(--color-red);
+    background-color: var(--color-secondary);
 }
 
 .container-mensagens {

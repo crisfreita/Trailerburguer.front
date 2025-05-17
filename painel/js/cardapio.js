@@ -1080,7 +1080,7 @@ cardapio.method = {
                 return;
             }
 
-            if (isNaN(precosimples)) {
+            if (isNaN(precosimples) || precosimples <= 0) {
                 app.method.mensagem('Informe o valor do opcional, por favor.');
                 return;
             }
@@ -1134,7 +1134,7 @@ cardapio.method = {
                     continuar = false;
                 }
     
-                if (isNaN(precosimples)) {
+                if (isNaN(precosimples) || precosimples <= 0) {
                     continuar = false;
                 }
 
