@@ -931,11 +931,13 @@ cardapio.method = {
                         valor = `+ R$ ${(element.valoropcional).toFixed(2).replace('.', ',')}`;
                     }
 
+                    let checked = element.ativo ? 'checked' : ''; // <<< Aqui pega do banco
+
                     itens += cardapio.template.opcionalItem.replace(/\${idopcionalitem}/g, element.idopcionalitem)
                         .replace(/\${nome}/g, element.nomeopcional)
                         .replace(/\${valor}/g, valor)
                         .replace(/\${idopcional}/g, e[0])
-                    
+                        .replace(/\${checked}/g, checked); // <<< Adiciona ao template
                 }
 
                 let temp = cardapio.template.opcional.replace(/\${idopcional}/g, e[0])
