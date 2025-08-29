@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistema Chef Delivery</title>
+    <title>Pizzaria Maluca</title>
 
     <link rel="stylesheet" href="./css/bootstrap.min.css" />
     <link rel="stylesheet" href="./css/fontawesome.css" />
@@ -56,20 +56,6 @@
               <i class="fas fa-motorcycle"></i>&nbsp; <b>Taxa de entrega</b>
             </p>
             <p class="price mb-0"><b id="lblTaxaEntrega">-</b></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Desconto do cupom -->
-      <div class="card mb-2 hidden" id="containerCupomDesconto">
-        <div class="detalhes-produto">
-          <div class="infos-produto">
-            <p class="name mb-0">
-              <i class="fas fa-ticket-alt"></i>&nbsp; <b>Desconto do Cupom</b>
-            </p>
-            <p class="price mb-0 text-danger">
-              <b id="lblDescontoCupom">- R$ 0,00</b>
-            </p>
           </div>
         </div>
       </div>
@@ -182,7 +168,7 @@
         />
       </div>
 
-      <div class="container-group mb-5 hidden" id="container-como-pagar">
+      <div class="container-group mb-5">
         <span class="badge">Obrigatório</span>
         <p class="title-categoria mb-0"><b>Como você prefere pagar?</b></p>
         <span class="sub-title-categoria">Pagamento na entrega</span>
@@ -199,10 +185,7 @@
           </div>
         </div>
 
-        <div
-          class="card card-address mt-2 hidden"
-          id="cardFormaPagamentoSelecionada"
-        >
+        <div class="card card-address mt-2" id="cardFormaPagamentoSelecionada">
           <div class="img-icon-details" id="iconFormaPagamentoSelecionada">
             <!-- <i class="fas fa-coins"></i> -->
             <!-- <i class="fas fa-credit-card"></i> -->
@@ -229,8 +212,7 @@
       id="btnFazerPedido"
       onclick="carrinho.method.fazerPedido()"
     >
-      <span id="lblFazerPedido">Fazer pedido</span>
-      <span id="lblTotalCarrinhoBotao"></span>
+      Fazer pedido <span id="lblTotalCarrinhoBotao"></span>
     </a>
 
     <a
@@ -292,17 +274,6 @@
                     style="float: right; margin-top: -45px; margin-right: 10px"
                   >
                     <i class="fa fa-search"></i>
-                  </a>
-                </div>
-
-                <!-- Botão "Não sei o CEP" -->
-                <div class="mt-2">
-                  <a
-                    href="#!"
-                    class="btn btn-link p-0"
-                    onclick="carrinho.method.buscarPorEndereco()"
-                  >
-                    Não sei o CEP
                   </a>
                 </div>
               </div>
