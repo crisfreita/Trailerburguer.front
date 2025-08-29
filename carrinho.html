@@ -1,401 +1,432 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pizzaria Maluca</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sistema Chef Delivery</title>
 
-    <link rel="stylesheet" href="./css/bootstrap.min.css" />
-    <link rel="stylesheet" href="./css/fontawesome.css" />
-    <link rel="stylesheet" href="./css/animate.css" />
-    <link rel="stylesheet" href="./css/main.css" />
-  </head>
-  <body>
-    <div class="container-mensagens" id="container-mensagens"></div>
+        <link rel="stylesheet" href="./css/bootstrap.min.css" />
+        <link rel="stylesheet" href="./css/fontawesome.css" />
+        <link rel="stylesheet" href="./css/animate.css" />
+        <link rel="stylesheet" href="./css/main.css" />
 
-    <div class="loader-full hidden">
-      <img src="./img/loader.png" width="100" />
-    </div>
+    </head>
+    <body>
 
-    <div class="bg-top pedido"></div>
+        <div class="container-mensagens" id="container-mensagens">
 
-    <header class="width-fix mt-3">
-      <div class="card">
-        <div class="d-flex">
-          <a href="./index.html" class="container-voltar">
-            <i class="fas fa-arrow-left"></i>
-          </a>
-          <div class="infos text-center">
-            <h1 class="mb-0"><b>Seu carrinho</b></h1>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <section class="carrinho width-fix mt-4 hidden" id="carrinho-vazio">
-      <div class="card card-address">
-        <div class="img-icon-details">
-          <i class="fas fa-cart-plus"></i>
-        </div>
-        <div class="infos">
-          <p class="name mb-0"><b>Seu carrinho está vazio</b></p>
-          <span class="text mb-0">
-            Volte ao cardápio, selecione os itens e adicione ao seu carrinho.
-          </span>
-        </div>
-      </div>
-    </section>
-
-    <section class="carrinho width-fix mt-4 hidden" id="carrinho-cheio">
-      <div id="listaProdutos"></div>
-
-      <div class="card mb-2 hidden" id="containerTaxaEntrega">
-        <div class="detalhes-produto">
-          <div class="infos-produto">
-            <p class="name mb-0">
-              <i class="fas fa-motorcycle"></i>&nbsp; <b>Taxa de entrega</b>
-            </p>
-            <p class="price mb-0"><b id="lblTaxaEntrega">-</b></p>
-          </div>
-        </div>
-      </div>
-
-      <div class="card mb-2">
-        <div class="detalhes-produto">
-          <div class="infos-produto">
-            <p class="name-total mb-0"><b>Total</b></p>
-            <p class="price-total mb-0"><b id="lblTotalCarrinho"></b></p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="opcionais width-fix mt-5 pb-5 hidden" id="opcoes-entrega">
-      <div class="container-group mb-5">
-        <span class="badge">Obrigatório</span>
-        <p class="title-categoria mb-0"><b>Escolha uma opção</b></p>
-        <span class="sub-title-categoria">Como quer receber o pedido?</span>
-
-        <div class="card card-opcionais mt-2 hidden" id="containerTipoEntrega">
-          <div class="infos-produto-opcional">
-            <p class="name mb-0"><b id="lblTipoEntregaTempo">Entrega</b></p>
-          </div>
-          <div class="checks">
-            <label class="container-check">
-              <input
-                type="checkbox"
-                id="chkEntrega"
-                onchange="carrinho.method.changeTipoEntrega()"
-              />
-              <span class="checkmark"></span>
-            </label>
-          </div>
         </div>
 
-        <div class="card card-opcionais mt-2 hidden" id="containerTipoRetirada">
-          <div class="infos-produto-opcional">
-            <p class="name mb-0"><b id="lblTipoRetiradaTempo">Retirada</b></p>
-          </div>
-          <div class="checks">
-            <label class="container-check">
-              <input
-                type="checkbox"
-                id="chkRetirada"
-                onchange="carrinho.method.changeTipoRetirada()"
-              />
-              <span class="checkmark"></span>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="container-group mb-5 hidden" id="containerEnderecoEntrega">
-        <span class="badge">Obrigatório</span>
-        <p class="title-categoria mb-0"><b>Qual o seu endereço?</b></p>
-        <span class="sub-title-categoria">Informe o endereço da entrega</span>
-
-        <div
-          class="card card-select mt-2 hidden"
-          id="cardAddEndereco"
-          onclick="carrinho.method.abrirModalEndereco()"
-        >
-          <div class="infos-produto-opcional">
-            <p class="mb-0 color-primary">
-              <i class="fas fa-plus-circle"></i>&nbsp; Nenhum endereço
-              selecionado
-            </p>
-          </div>
+        <div class="loader-full hidden">
+            <img src="./img/loader.png" width="100" />
         </div>
 
-        <div class="card card-address mt-2 hidden" id="cardEnderecoSelecionado">
-          <div class="img-icon-details">
-            <i class="fas fa-map-marked-alt"></i>
-          </div>
-          <div class="infos">
-            <p class="name mb-0"><b id="lblEnderecoSelecionado"></b></p>
-            <span class="text mb-0" id="lblCepEnderecoSelecionado"></span>
-          </div>
-          <div
-            class="icon-edit"
-            onclick="carrinho.method.abrirModalOpcoesEndereco()"
-          >
-            <i class="fas fa-pencil-alt"></i>
-          </div>
-        </div>
-      </div>
+        <div class="bg-top pedido"></div>
 
-      <div class="container-group mb-5">
-        <span class="badge">Obrigatório</span>
-        <p class="title-categoria mb-0"><b>Nome e Sobrenome</b></p>
-        <span class="sub-title-categoria">Como vamos te chamar?</span>
-        <input
-          id="txtNomeSobrenome"
-          type="text"
-          class="form-control mt-2"
-          placeholder="* Informe o nome e sobrenome"
-        />
-      </div>
+        <header class="width-fix mt-3">
+            <div class="card">
 
-      <div class="container-group mb-5">
-        <span class="badge">Obrigatório</span>
-        <p class="title-categoria mb-0"><b>Número do seu celular</b></p>
-        <span class="sub-title-categoria">Para mais informações do pedido</span>
-        <input
-          id="txtCelular"
-          type="text"
-          class="form-control mt-2 sp_celphones"
-          placeholder="(00) 0000-0000"
-        />
-      </div>
+                <div class="d-flex">
 
-      <div class="container-group mb-5">
-        <span class="badge">Obrigatório</span>
-        <p class="title-categoria mb-0"><b>Como você prefere pagar?</b></p>
-        <span class="sub-title-categoria">Pagamento na entrega</span>
+                    <a href="./index.html" class="container-voltar">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div class="infos text-center">
+                        <h1 class="mb-0"><b>Seu carrinho</b></h1>
+                    </div>
 
-        <div
-          class="card card-select mt-2"
-          id="cardAddFormaPagamento"
-          onclick="carrinho.method.abrirModalFormaPagamento()"
-        >
-          <div class="infos-produto-opcional">
-            <p class="mb-0 color-primary">
-              <i class="fas fa-plus-circle"></i>&nbsp; Nenhuma forma selecionada
-            </p>
-          </div>
-        </div>
-
-        <div class="card card-address mt-2" id="cardFormaPagamentoSelecionada">
-          <div class="img-icon-details" id="iconFormaPagamentoSelecionada">
-            <!-- <i class="fas fa-coins"></i> -->
-            <!-- <i class="fas fa-credit-card"></i> -->
-          </div>
-          <div class="infos">
-            <p class="name mb-0"><b id="lblFormaPagamentoSelecionada"></b></p>
-            <span
-              class="text mb-0"
-              id="lblDescFormaPagamentoSelecionada"
-            ></span>
-          </div>
-          <div
-            class="icon-edit"
-            onclick="carrinho.method.abrirModalFormaPagamento()"
-          >
-            <i class="fas fa-pencil-alt"></i>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <a
-      class="btn btn-yellow btn-full hidden"
-      id="btnFazerPedido"
-      onclick="carrinho.method.fazerPedido()"
-    >
-      Fazer pedido <span id="lblTotalCarrinhoBotao"></span>
-    </a>
-
-    <a
-      href="./index.html"
-      class="btn btn-yellow btn-full voltar hidden"
-      id="btnVoltar"
-    >
-      Voltar para o cardápio
-    </a>
-
-    <!-- Modal actions Produto -->
-    <div class="modal-actions hidden" id="modalActionsProduto">
-      <div
-        class="backdrop"
-        onclick="carrinho.method.fecharModalActionsProduto()"
-      ></div>
-      <div class="width-fix container-modal-actions">
-        <a
-          href="#!"
-          class="color-red"
-          onclick="carrinho.method.removerProdutoCarrinho()"
-          >Remover</a
-        >
-      </div>
-    </div>
-
-    <!-- Modal de Endereco -->
-    <div
-      id="modalEndereco"
-      class="modal fade modal-form"
-      tabindex="-1"
-      role="dialog"
-      data-backdrop="static"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title"><b>Endereço</b></h5>
-            <button
-              type="button"
-              class="btn btn-white btn-sm"
-              data-bs-dismiss="modal"
-              arial-label="Close"
-            >
-              <i class="fas fa-times"></i> Fechar
-            </button>
-          </div>
-
-          <div class="modal-body">
-            <div class="row mb-5">
-              <div class="col-8">
-                <div class="form-group container-cep">
-                  <p class="title-categoria mb-0"><b>CEP:</b></p>
-                  <input type="text" class="form-control cep" id="txtCEP" />
-                  <a
-                    href="#!"
-                    class="btn btn-yellow btn-sm"
-                    onclick="carrinho.method.buscarCep()"
-                    style="float: right; margin-top: -45px; margin-right: 10px"
-                  >
-                    <i class="fa fa-search"></i>
-                  </a>
                 </div>
-              </div>
 
-              <div class="col-12">
-                <div class="form-group">
-                  <p class="title-categoria mb-0 mt-4"><b>Endereço:</b></p>
-                  <input type="text" class="form-control" id="txtEndereco" />
-                </div>
-              </div>
+            </div>
+        </header>
 
-              <div class="col-8">
-                <div class="form-group">
-                  <p class="title-categoria mb-0 mt-4"><b>Bairro:</b></p>
-                  <input type="text" class="form-control" id="txtBairro" />
+        <section class="carrinho width-fix mt-4 hidden" id="carrinho-vazio">
+            <div class="card card-address">
+                <div class="img-icon-details">
+                    <i class="fas fa-cart-plus"></i>
                 </div>
-              </div>
+                <div class="infos">
 
-              <div class="col-4">
-                <div class="form-group">
-                  <p class="title-categoria mb-0 mt-4"><b>Número:</b></p>
-                  <input type="text" class="form-control" id="txtNumero" />
-                </div>
-              </div>
+                    <p class="name mb-0"><b>Seu carrinho está vazio</b></p>
+                    <span class="text mb-0">
+                        Volte ao cardápio, selecione os itens e adicione ao seu carrinho.
+                    </span>
 
-              <div class="col-8">
-                <div class="form-group">
-                  <p class="title-categoria mb-0 mt-4"><b>Cidade:</b></p>
-                  <input type="text" class="form-control" id="txtCidade" />
                 </div>
-              </div>
+            </div>
+        </section>
+        
+        <section class="carrinho width-fix mt-4 hidden" id="carrinho-cheio">
 
-              <div class="col-4">
-                <div class="form-group">
-                  <p class="title-categoria mb-0 mt-4"><b>UF:</b></p>
-                  <select class="form-control" id="ddlUf">
-                    <option value="-1">...</option>
-                    <option value="AC">AC</option>
-                    <option value="AL">AL</option>
-                    <option value="AP">AP</option>
-                    <option value="AM">AM</option>
-                    <option value="BA">BA</option>
-                    <option value="CE">CE</option>
-                    <option value="DF">DF</option>
-                    <option value="ES">ES</option>
-                    <option value="GO">GO</option>
-                    <option value="MA">MA</option>
-                    <option value="MT">MT</option>
-                    <option value="MS">MS</option>
-                    <option value="MG">MG</option>
-                    <option value="PA">PA</option>
-                    <option value="PB">PB</option>
-                    <option value="PR">PR</option>
-                    <option value="PE">PE</option>
-                    <option value="PI">PI</option>
-                    <option value="RJ">RJ</option>
-                    <option value="RN">RN</option>
-                    <option value="RS">RS</option>
-                    <option value="RO">RO</option>
-                    <option value="RR">RR</option>
-                    <option value="SC">SC</option>
-                    <option value="SP">SP</option>
-                    <option value="SE">SE</option>
-                    <option value="TO">TO</option>
-                  </select>
-                </div>
-              </div>
+            <div id="listaProdutos">
 
-              <div class="col-12">
-                <div class="form-group">
-                  <p class="title-categoria mb-0 mt-4"><b>Complemento:</b></p>
-                  <input type="text" class="form-control" id="txtComplemento" />
-                </div>
-              </div>
             </div>
 
-            <div class="footer-btn mt-3 mb-3" style="text-align: right">
-              <a
-                href="#!"
-                class="btn btn-yellow btn-sm"
-                onclick="carrinho.method.salvarEndereco()"
-              >
-                <i class="fas fa-check"></i>&nbsp; Salvar Endereço
-              </a>
+            <div class="card mb-2 hidden" id="containerTaxaEntrega">
+                <div class="detalhes-produto">
+                    <div class="infos-produto">
+                        <p class="name mb-0"><i class="fas fa-motorcycle"></i>&nbsp; <b>Taxa de entrega</b></p>
+                        <p class="price mb-0"><b id="lblTaxaEntrega">-</b></p>
+                    </div>
+                </div>
             </div>
-          </div>
+
+             <!-- Desconto do cupom -->
+         <div class="card mb-2 hidden" id="containerCupomDesconto">
+             <div class="detalhes-produto">
+                 <div class="infos-produto">
+                     <p class="name mb-0"><i class="fas fa-ticket-alt"></i>&nbsp; <b>Desconto do Cupom</b></p>
+                      <p class="price mb-0 text-danger"><b id="lblDescontoCupom">- R$ 0,00</b></p>
+                 </div>
+            </div>
+         </div>
+
+            <div class="card mb-2">
+                <div class="detalhes-produto">
+                    <div class="infos-produto">
+                        <p class="name-total mb-0"><b>Total</b></p>
+                        <p class="price-total mb-0"><b id="lblTotalCarrinho"></b></p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <section class="opcionais width-fix mt-5 pb-5 hidden" id="opcoes-entrega">
+
+            <div class="container-group mb-5">
+                <span class="badge">Obrigatório</span>
+                <p class="title-categoria mb-0"><b>Escolha uma opção</b></p>
+                <span class="sub-title-categoria">Como quer receber o pedido?</span>
+    
+                <div class="card card-opcionais mt-2 hidden" id="containerTipoEntrega">
+                    <div class="infos-produto-opcional">
+                        <p class="name mb-0"><b id="lblTipoEntregaTempo">Entrega</b></p>
+                    </div>
+                    <div class="checks">
+                        <label class="container-check">
+                            <input type="checkbox" id="chkEntrega" onchange="carrinho.method.changeTipoEntrega()" />
+                            <span class="checkmark"></span>
+                        </label>
+                    </div>
+                </div>
+    
+                <div class="card card-opcionais mt-2 hidden" id="containerTipoRetirada">
+                    <div class="infos-produto-opcional">
+                        <p class="name mb-0"><b id="lblTipoRetiradaTempo">Retirada</b></p>
+                    </div>
+                    <div class="checks">
+                        <label class="container-check">
+                            <input type="checkbox" id="chkRetirada" onchange="carrinho.method.changeTipoRetirada()" />
+                            <span class="checkmark"></span>
+                        </label>
+                    </div>
+                </div>
+    
+            </div>
+
+            <div class="container-group mb-5 hidden" id="containerEnderecoEntrega">
+                <span class="badge">Obrigatório</span>
+                <p class="title-categoria mb-0"><b>Qual o seu endereço?</b></p>
+                <span class="sub-title-categoria">Informe o endereço da entrega</span>
+    
+                <div class="card card-select mt-2 hidden" id="cardAddEndereco" onclick="carrinho.method.abrirModalEndereco()">
+                    <div class="infos-produto-opcional">
+                        <p class="mb-0 color-primary">
+                            <i class="fas fa-plus-circle"></i>&nbsp; Nenhum endereço selecionado
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card card-address mt-2 hidden" id="cardEnderecoSelecionado">
+                    <div class="img-icon-details">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <div class="infos">
+                        <p class="name mb-0"><b id="lblEnderecoSelecionado"></b></p>
+                        <span class="text mb-0" id="lblCepEnderecoSelecionado"></span>
+                    </div>
+                    <div class="icon-edit" onclick="carrinho.method.abrirModalOpcoesEndereco()">
+                        <i class="fas fa-pencil-alt"></i>
+                    </div>
+                </div>
+    
+            </div>
+
+            <div class="container-group mb-5">
+                <span class="badge">Obrigatório</span>
+                <p class="title-categoria mb-0"><b>Nome e Sobrenome</b></p>
+                <span class="sub-title-categoria">Como vamos te chamar?</span>
+                <input id="txtNomeSobrenome" type="text" class="form-control mt-2" placeholder="* Informe o nome e sobrenome" />
+            </div>
+
+            <div class="container-group mb-5">
+                <span class="badge">Obrigatório</span>
+                <p class="title-categoria mb-0"><b>Número do seu celular</b></p>
+                <span class="sub-title-categoria">Para mais informações do pedido</span>
+                <input id="txtCelular" type="text" class="form-control mt-2 sp_celphones" placeholder="(00) 0000-0000" />
+            </div>
+
+             <div class="col-12 mt-5 tab-item" id="selecionar-cupom">
+                <p class="title-categoria mb-0"><b>Selecione ou insira um cupom de desconto</b></p>
+                <div class="container-group mb-3 tab-item-cupom">
+                    <div class="card card-address cursor-default mt-2 pb-4 justify-content-start">
+                          <div class="tempo">
+
+                           <!-- Dropdown com cupons válidos (preenchido via JavaScript) -->
+                              <div class="form-group me-3">
+                                 <label for="selectCupom"><b>Cupons Disponíveis</b></label>
+                                 <select id="selectCupom" class="form-control" onchange="carrinho.method.aplicarCupomSelecionado(this.value)">
+                                 <option value="">Selecione um cupom</option>
+                                 </select>
+                             </div>
+
+                           <!-- Cupom Fidelidade (aparece apenas se disponível via JS) -->
+                            <div id="cupomFidelidadeBox" class="mt-3 p-2 border border-success rounded small text-success" style="display: none;">
+                              🎉 Você ganhou um <b>cupom fidelidade</b>: <span id="cupomFidelidadeCodigo"></span><br />
+                               <span class="text-muted">Já aplicamos esse cupom automaticamente ao seu pedido.</span>
+                            </div>
+
+
+        <!-- Campo para inserir cupom manualmente -->
+        <div class="form-group me-3 mt-3">
+          <label for="inputCupomManual"><b>Ou insira o código do cupom</b></label>
+          <input id="inputCupomManual" type="text" class="form-control" placeholder="Digite o código do cupom" />
         </div>
-      </div>
-    </div>
 
-    <!-- Modal actions Endereço -->
-    <div class="modal-actions hidden" id="modalActionsEndereco">
-      <div
-        class="backdrop"
-        onclick="carrinho.method.fecharModalActionsEndereco()"
-      ></div>
-      <div class="width-fix container-modal-actions">
-        <a href="#!" onclick="carrinho.method.editarEnderecoCarrinho()"
-          >Editar endereço</a
-        >
-        <a
-          href="#!"
-          class="color-red"
-          onclick="carrinho.method.removerEnderecoCarrinho()"
-          >Remover</a
-        >
-      </div>
-    </div>
+        <!-- Botão para aplicar cupom -->
+        <a class="btn btn-yellow btn-sm ms-1 mt-2" onclick="carrinho.method.validarCupomAplicado()">
+          <i class="fas fa-check-circle"></i>&nbsp; Aplicar Cupom
+        </a>
 
-    <!-- Modal actions Pagamento -->
-    <div class="modal-actions hidden" id="modalActionsFormaPagamento">
-      <div
-        class="backdrop"
-        onclick="carrinho.method.fecharModalActionsFormaPagamento()"
-      ></div>
-      <div class="width-fix container-modal-actions"></div>
-    </div>
+        <!-- Mensagem de feedback -->
+        <div id="cupomFeedback" class="mt-2 text-success" style="display:none;">
+          ✅ Cupom aplicado com sucesso!
+        </div>
+        <div id="cupomErro" class="mt-2 text-danger" style="display:none;">
+          ❌ Cupom inválido ou expirado.
+        </div>
+ 
 
-    <script type="text/javascript" src="./js/jquery.min.js"></script>
-    <script type="text/javascript" src="./js/bootstrap.bundle.min.js"></script>
-    <script type="text/javascript" src="./js/jquery.mask.js"></script>
-    <script type="text/javascript" src="./js/app.js"></script>
-    <script type="text/javascript" src="./js/carrinho.js"></script>
-  </body>
+                          </div>
+                    </div>
+                </div>
+             </div>
+
+            <div class="container-group mb-5 hidden" id="container-como-pagar">
+                <span class="badge">Obrigatório</span>
+                <p class="title-categoria mb-0"><b>Como você prefere pagar?</b></p>
+                <span class="sub-title-categoria">Pagamento na entrega</span>
+    
+                <div class="card card-select mt-2" id="cardAddFormaPagamento" onclick="carrinho.method.abrirModalFormaPagamento()">
+                    <div class="infos-produto-opcional">
+                        <p class="mb-0 color-primary">
+                            <i class="fas fa-plus-circle"></i>&nbsp; Nenhuma forma selecionada
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card card-address mt-2 hidden" id="cardFormaPagamentoSelecionada">
+                    <div class="img-icon-details" id="iconFormaPagamentoSelecionada">
+                        <!-- <i class="fas fa-coins"></i> -->
+                        <!-- <i class="fas fa-credit-card"></i> -->
+                    </div>
+                    <div class="infos">
+                        <p class="name mb-0"><b id="lblFormaPagamentoSelecionada"></b></p>
+                        <span class="text mb-0" id="lblDescFormaPagamentoSelecionada"></span>
+                    </div>
+                    <div class="icon-edit" onclick="carrinho.method.abrirModalFormaPagamento()">
+                        <i class="fas fa-pencil-alt"></i>
+                    </div>
+                </div>
+    
+            </div>
+
+        </section>
+
+        <a class="btn btn-yellow btn-full hidden" id="btnFazerPedido" onclick="carrinho.method.fazerPedido()">
+          <span id="lblFazerPedido">Fazer pedido</span> <span id="lblTotalCarrinhoBotao"></span>  
+        </a>
+
+        <a href="./index.html" class="btn btn-yellow btn-full voltar hidden" id="btnVoltar">
+            Voltar para o cardápio  
+        </a>
+
+        <!-- Modal actions Produto -->
+        <div class="modal-actions hidden" id="modalActionsProduto">
+            <div class="backdrop" onclick="carrinho.method.fecharModalActionsProduto()"></div>
+            <div class="width-fix container-modal-actions">
+
+                <a href="#!" class="color-red" onclick="carrinho.method.removerProdutoCarrinho()">Remover</a>
+
+            </div>
+        </div>
+
+        <!-- Modal de Endereco -->
+        <div id="modalEndereco" class="modal fade modal-form" tabindex="-1" role="dialog" data-backdrop="static">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+    
+                    <div class="modal-header">
+                        <h5 class="modal-title"><b>Endereço</b></h5>
+                        <button type="button" class="btn btn-white btn-sm" data-bs-dismiss="modal" arial-label="Close">
+                            <i class="fas fa-times"></i> Fechar
+                        </button>
+                    </div>
+    
+                    <div class="modal-body">
+
+                        <div class="row mb-5">
+    
+                            <div class="col-8">
+                                <div class="form-group container-cep">
+                                    <p class="title-categoria mb-0"><b>CEP:</b></p>
+                                    <input type="text" class="form-control cep" id="txtCEP" />
+                                    <a href="#!" class="btn btn-yellow btn-sm" onclick="carrinho.method.buscarCep()" style="float: right; margin-top: -45px; margin-right: 10px;">
+                                        <i class="fa fa-search"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <p class="title-categoria mb-0 mt-4"><b>Endereço:</b></p>
+                                    <input type="text" class="form-control" id="txtEndereco" />
+                                </div>
+                            </div>
+
+                            <div class="col-8">
+                                <div class="form-group">
+                                    <p class="title-categoria mb-0 mt-4"><b>Bairro:</b></p>
+                                    <input type="text" class="form-control" id="txtBairro" />
+                                </div>
+                            </div>
+
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <p class="title-categoria mb-0 mt-4"><b>Número:</b></p>
+                                    <input type="text" class="form-control" id="txtNumero" />
+                                </div>
+                            </div>
+
+                            <div class="col-8">
+                                <div class="form-group">
+                                    <p class="title-categoria mb-0 mt-4"><b>Cidade:</b></p>
+                                    <input type="text" class="form-control" id="txtCidade" />
+                                </div>
+                            </div>
+
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <p class="title-categoria mb-0 mt-4"><b>UF:</b></p>
+                                    <select class="form-control" id="ddlUf">
+                                        <option value="-1">...</option>
+                                        <option value="AC">AC</option>
+                                        <option value="AL">AL</option>
+                                        <option value="AP">AP</option>
+                                        <option value="AM">AM</option>
+                                        <option value="BA">BA</option>
+                                        <option value="CE">CE</option>
+                                        <option value="DF">DF</option>
+                                        <option value="ES">ES</option>
+                                        <option value="GO">GO</option>
+                                        <option value="MA">MA</option>
+                                        <option value="MT">MT</option>
+                                        <option value="MS">MS</option>
+                                        <option value="MG">MG</option>
+                                        <option value="PA">PA</option>
+                                        <option value="PB">PB</option>
+                                        <option value="PR">PR</option>
+                                        <option value="PE">PE</option>
+                                        <option value="PI">PI</option>
+                                        <option value="RJ">RJ</option>
+                                        <option value="RN">RN</option>
+                                        <option value="RS">RS</option>
+                                        <option value="RO">RO</option>
+                                        <option value="RR">RR</option>
+                                        <option value="SC">SC</option>
+                                        <option value="SP">SP</option>
+                                        <option value="SE">SE</option>
+                                        <option value="TO">TO</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <p class="title-categoria mb-0 mt-4"><b>Complemento:</b></p>
+                                    <input type="text" class="form-control" id="txtComplemento" />
+                                </div>
+                            </div>
+    
+                        </div>
+    
+                        <div class="footer-btn mt-3 mb-3" style="text-align: right;">
+                            <a href="#!" class="btn btn-yellow btn-sm" onclick="carrinho.method.salvarEndereco()">
+                                <i class="fas fa-check"></i>&nbsp; Salvar Endereço
+                            </a>
+                        </div>
+    
+                    </div>
+    
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal actions Endereço -->
+        <div class="modal-actions hidden" id="modalActionsEndereco">
+            <div class="backdrop" onclick="carrinho.method.fecharModalActionsEndereco()"></div>
+            <div class="width-fix container-modal-actions">
+
+                <a href="#!" onclick="carrinho.method.editarEnderecoCarrinho()">Editar endereço</a>
+                <a href="#!" class="color-red" onclick="carrinho.method.removerEnderecoCarrinho()">Remover</a>
+
+            </div>
+        </div>
+
+        <!-- Modal actions Pagamento -->
+        <div class="modal-actions hidden" id="modalActionsFormaPagamento">
+            <div class="backdrop" onclick="carrinho.method.fecharModalActionsFormaPagamento()"></div>
+            <div class="width-fix container-modal-actions"></div>
+        </div>
+
+        <script>
+document.addEventListener("DOMContentLoaded", () => {
+  app.method.get("/cupomdisponiveis", (res) => {
+    if (res.status === 'success') {
+      const select = document.getElementById("selectCupom");
+      select.innerHTML = '<option value="">Selecione um cupom</option>';
+
+      res.data.forEach(cupom => {
+        const option = document.createElement("option");
+
+        const valorFormatado = cupom.tipo === 'percentual'
+          ? `${cupom.valor}%`
+          : `R$ ${Number(cupom.valor).toFixed(2).replace('.', ',')}`;
+
+        const validade = new Date(cupom.validade);
+        const validadeFormatada = validade.toLocaleDateString('pt-BR');
+
+        option.value = cupom.codigo;
+        option.textContent = `${cupom.codigo} - ${valorFormatado} (até ${validadeFormatada})`;
+
+        select.appendChild(option);
+      });
+    }
+  }, (err) => {
+    console.error("Erro ao carregar cupons:", err);
+  });
+});
+</script>
+
+
+
+        <script type="text/javascript" src="./js/jquery.min.js"></script>
+        <script type="text/javascript" src="./js/bootstrap.bundle.min.js"></script>
+        <script type="text/javascript" src="./js/jquery.mask.js"></script>
+        <script type="text/javascript" src="./js/app.js"></script>
+        <script type="text/javascript" src="./js/carrinho.js"></script>
+
+    </body>
 </html>
