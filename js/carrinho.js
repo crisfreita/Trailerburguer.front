@@ -19,6 +19,11 @@ var MODAL_ENDERECO = new bootstrap.Modal(
   document.getElementById("modalEndereco")
 );
 
+var PAGAMENTO_ONLINE = false;
+
+// Armazena os cupons válidos recebidos do backend
+var cuponsValidos = {};
+
 carrinho.event = {
   init: () => {
     $(".cep").mask("00000-000");
@@ -134,28 +139,34 @@ carrinho.method = {
   // atualiza o valor total do carrinho
   atualizarValorTotal: () => {
     if (CARRINHO_ATUAL.length > 0) {
-      let total = 0;
+      let subtotal = 0;
 
-      CARRINHO_ATUAL.forEach((e, i) => {
-        let subTotal = 0;
+      CARRINHO_ATUAL.forEach((e) => {
+        let itemTotal = e.quantidade * e.valor;
 
-        if (e.opcionais.length > 0) {
-          // percorre a lista de opcionais
-          for (let index = 0; index < e.opcionais.length; index++) {
-            let element = e.opcionais[index];
-            subTotal += element.valoropcional * e.quantidade;
-          }
+        if (e.opcionais?.length > 0) {
+          e.opcionais.forEach((opcional) => {
+            itemTotal += opcional.valoropcional * e.quantidade;
+          });
         }
 
-        subTotal += e.quantidade * e.valor;
-        total += subTotal;
+        subtotal += itemTotal;
       });
 
-      // validar taxa entrega
-      if (TAXA_ATUAL > 0) {
-        total += TAXA_ATUAL;
+      const valorDesconto = carrinho.cupom?.valor || 0;
+      const subtotalComDesconto = Math.max(0, subtotal - valorDesconto);
+      const totalFinal = subtotalComDesconto + (TAXA_ATUAL || 0);
 
-        // exibe o label da taxa
+      // Atualiza valores visuais
+      document.querySelector("#lblTotalCarrinho").innerText = `R$ ${totalFinal
+        .toFixed(2)
+        .replace(".", ",")}`;
+      document.querySelector(
+        "#lblTotalCarrinhoBotao"
+      ).innerText = `R$ ${totalFinal.toFixed(2).replace(".", ",")}`;
+
+      // Taxa de entrega
+      if (TAXA_ATUAL > 0) {
         document
           .querySelector("#containerTaxaEntrega")
           .classList.remove("hidden");
@@ -167,12 +178,20 @@ carrinho.method = {
         document.querySelector("#lblTaxaEntrega").innerText = "-";
       }
 
-      document.querySelector("#lblTotalCarrinho").innerText = `R$ ${total
-        .toFixed(2)
-        .replace(".", ",")}`;
-      document.querySelector("#lblTotalCarrinhoBotao").innerText = `R$ ${total
-        .toFixed(2)
-        .replace(".", ",")}`;
+      // Desconto do cupom
+      if (valorDesconto > 0) {
+        document
+          .querySelector("#containerCupomDesconto")
+          .classList.remove("hidden");
+        document.querySelector(
+          "#lblDescontoCupom"
+        ).innerText = `- R$ ${valorDesconto.toFixed(2).replace(".", ",")}`;
+      } else {
+        document
+          .querySelector("#containerCupomDesconto")
+          .classList.add("hidden");
+        document.querySelector("#lblDescontoCupom").innerText = "- R$ 0,00";
+      }
     }
   },
 
@@ -190,6 +209,9 @@ carrinho.method = {
 
   // remove o produto do carrinho
   removerProdutoCarrinho: () => {
+    const notificationSound = new Audio("../../painel/assets/ops.mp3");
+    notificationSound.volume = 0.2;
+
     if (PRODUTO_SELECIONADO.length > 0) {
       let carrinhoLocal = app.method.obterValorSessao("cart");
 
@@ -212,8 +234,55 @@ carrinho.method = {
           document
             .querySelector("#modalActionsProduto")
             .classList.add("hidden");
+          notificationSound.play();
 
           app.method.mensagem("Item removido.", "green");
+        }
+      }
+    }
+  },
+
+  editarProdutoCarrinho: () => {
+    if (PRODUTO_SELECIONADO.length > 0) {
+      let carrinhoLocal = app.method.obterValorSessao("cart");
+
+      if (carrinhoLocal != undefined) {
+        let cart = JSON.parse(carrinhoLocal);
+
+        if (cart.itens.length > 0) {
+          let produto = cart.itens.find((e) => e.guid === PRODUTO_SELECIONADO);
+          if (!produto) return;
+
+          // Preenche campos do modal de edição
+          document.querySelector("#inputQuantidade").value =
+            produto.quantidade || 1;
+          document.querySelector("#inputObservacao").value =
+            produto.observacao || "";
+
+          // Marca opcionais
+          if (produto.opcionais?.length > 0) {
+            produto.opcionais.forEach((opc) => {
+              let opcEl = document.querySelector(
+                `[data-opcional-id="${opc.id}"]`
+              );
+              if (opcEl) opcEl.checked = true;
+            });
+          }
+
+          // Guarda o produto que está sendo editado
+          carrinho.itemEditando = PRODUTO_SELECIONADO;
+
+          // Fecha modal de ações
+          document
+            .querySelector("#modalActionsProduto")
+            .classList.add("hidden");
+
+          // Troca o texto do botão de adicionar para "Salvar Alterações"
+          document.querySelector("#btnAdicionarCarrinho").textContent =
+            "Salvar Alterações";
+
+          // Abre modal de edição
+          document.querySelector("#modalProduto").classList.remove("hidden");
         }
       }
     }
@@ -524,12 +593,6 @@ carrinho.method = {
     let complemento = document.getElementById("txtComplemento").value.trim();
     let uf = document.getElementById("ddlUf").value.trim();
 
-    if (cep.length <= 0) {
-      app.method.mensagem("Informe o CEP, por favor.");
-      document.getElementById("txtCEP").focus();
-      return;
-    }
-
     if (endereco.length <= 0) {
       app.method.mensagem("Informe o Endereço, por favor.");
       document.getElementById("txtEndereco").focus();
@@ -576,6 +639,114 @@ carrinho.method = {
     carrinho.method.obterEndereco();
     carrinho.method.validarEnderecoSelecionado();
     MODAL_ENDERECO.hide();
+  },
+
+  buscarPorEndereco: () => {
+    let rua = document.querySelector("#txtEndereco").value;
+    let bairro = document.querySelector("#txtBairro").value;
+    let cidade = document.querySelector("#txtCidade").value;
+
+    if (!rua || !bairro || !cidade) {
+      app.method.mensagem("Preencha rua, bairro e cidade.");
+      return;
+    }
+
+    // Monta a query para o Google Maps
+    let enderecoQuery = encodeURIComponent(
+      `${rua}, ${bairro}, ${cidade}, Brasil`
+    );
+    let apiKey = "AIzaSyBeqAHQL5djcTkZgtJuCa24jJSnkTiDby8"; // coloque sua chave
+
+    let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${enderecoQuery}&key=${apiKey}`;
+
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "OK" && data.results.length > 0) {
+          let resultado = data.results[0];
+          let endereco = resultado.formatted_address;
+          let localizacao = resultado.geometry.location;
+
+          console.log("Endereço encontrado:", endereco);
+          console.log(
+            "Latitude:",
+            localizacao.lat,
+            "Longitude:",
+            localizacao.lng
+          );
+
+          // Aqui você pode salvar usando seu método
+          app.method.gravarValorSessao("address", endereco);
+        } else {
+          app.method.mensagem("Endereço não encontrado.");
+        }
+      })
+      .catch((error) => {
+        console.error("Erro ao buscar endereço:", error);
+        app.method.mensagem("Erro na busca do endereço.");
+      });
+  },
+
+  buscarEnderecoGoogle: () => {
+    const rua = document.getElementById("txtEndereco").value.trim();
+    const cidade = document.getElementById("txtCidade").value.trim();
+    const estado = document.getElementById("ddlUf").value.trim();
+
+    if (rua !== "") {
+      const query = `${rua}, ${cidade}, ${estado}`;
+      const apiKey = "AIzaSyBeqAHQL5djcTkZgtJuCa24jJSnkTiDby8"; // troque pela sua chave real
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        query
+      )}&key=${apiKey}`;
+
+      fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.status === "OK" && data.results.length > 0) {
+            const result = data.results[0];
+            const address = result.address_components;
+
+            // Preencher os campos com base nos componentes
+            address.forEach((component) => {
+              if (component.types.includes("route")) {
+                document.getElementById("txtEndereco").value =
+                  component.long_name;
+              }
+              if (
+                component.types.includes("sublocality") ||
+                component.types.includes("neighborhood")
+              ) {
+                document.getElementById("txtBairro").value =
+                  component.long_name;
+              }
+              if (component.types.includes("locality")) {
+                document.getElementById("txtCidade").value =
+                  component.long_name;
+              }
+              if (component.types.includes("administrative_area_level_1")) {
+                document.getElementById("ddlUf").value = component.short_name;
+              }
+            });
+
+            // Coordenadas (se precisar)
+            document.getElementById("txtLatitude").value =
+              result.geometry.location.lat;
+            document.getElementById("txtLongitude").value =
+              result.geometry.location.lng;
+
+            document.getElementById("txtNumero").focus();
+          } else {
+            app.method.mensagem("Endereço não encontrado.");
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          app.method.mensagem("Erro ao buscar o endereço.");
+        });
+    } else {
+      app.method.mensagem("Digite o nome da rua.");
+      document.getElementById("txtEndereco").focus();
+    }
   },
 
   // API ViaCEP
@@ -694,22 +865,66 @@ carrinho.method = {
   },
 
   // carrega as formas de pagamento na tela
+  // carregarFormasPagamento: (list) => {
+
+  // (list.length > 0) {
+
+  //list.forEach((e, i) => {
+
+  // temp = `<a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">${e.nome}</a>`
+
+  ///document.querySelector('#modalActionsFormaPagamento .container-modal-actions').innerHTML += temp;
+
+  // útlimo item
+  //if ((i + 1) == list.length) {
+  //document.querySelector('#modalActionsFormaPagamento .container-modal-actions').innerHTML += `<a href="#!" class="color-red" onclick="carrinho.method.selecionarFormaPagamento('')">Remover</a>`
+  //}
+
+  //})
+
+  //}
+  //else {
+  // document.querySelector('#formasPagamento').remove();
+  //   }
+
+  // },
+
+  // carrega as formas de pagamento na tela
   carregarFormasPagamento: (list) => {
     if (list.length > 0) {
+      // exibe sempre o container com formas de pagamento
+      document
+        .getElementById("container-como-pagar")
+        .classList.remove("hidden");
+
+      // verifica se online está disponível
+      PAGAMENTO_ONLINE = list.some((e) => e.idformapagamento === 5);
+
+      // limpa opções antigas
+      document.querySelector(
+        "#modalActionsFormaPagamento .container-modal-actions"
+      ).innerHTML = "";
+
       list.forEach((e, i) => {
         let temp = `<a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">${e.nome}</a>`;
-
         document.querySelector(
           "#modalActionsFormaPagamento .container-modal-actions"
         ).innerHTML += temp;
 
-        // útlimo item
-        if (i + 1 == list.length) {
+        if (i + 1 === list.length) {
           document.querySelector(
             "#modalActionsFormaPagamento .container-modal-actions"
           ).innerHTML += `<a href="#!" class="color-red" onclick="carrinho.method.selecionarFormaPagamento('')">Remover</a>`;
         }
       });
+
+      // atualiza o texto do botão com base na forma selecionada
+      if (FORMA_SELECIONADA?.idformapagamento == 5) {
+        document.getElementById("lblFazerPedido").innerText =
+          "Realizar Pagamento";
+      } else {
+        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
+      }
     } else {
       document.querySelector("#formasPagamento").remove();
     }
@@ -717,10 +932,9 @@ carrinho.method = {
 
   // método que seleciona a forma de pagamento
   selecionarFormaPagamento: (forma) => {
-    let selecionada = FORMAS_PAGAMENTO.filter((e) => {
-      return e.idformapagamento == forma;
-    });
-
+    let selecionada = FORMAS_PAGAMENTO.filter(
+      (e) => e.idformapagamento == forma
+    );
     TROCO = 0;
 
     if (selecionada.length > 0) {
@@ -730,57 +944,46 @@ carrinho.method = {
         .querySelector("#cardFormaPagamentoSelecionada")
         .classList.remove("hidden");
       document.querySelector("#cardAddFormaPagamento").classList.add("hidden");
-
       document.querySelector("#lblFormaPagamentoSelecionada").innerText =
         FORMA_SELECIONADA.nome;
 
-      // se for Pix
+      const icon = document.querySelector("#iconFormaPagamentoSelecionada");
+      const desc = document.querySelector("#lblDescFormaPagamentoSelecionada");
+
       if (FORMA_SELECIONADA.idformapagamento == 1) {
-        document.querySelector(
-          "#lblDescFormaPagamentoSelecionada"
-        ).innerText = `Pagamento na entrega do pedido.`;
-        document.querySelector(
-          "#iconFormaPagamentoSelecionada"
-        ).innerHTML = `<i class="fas fa-receipt"></i>`;
-      }
-      // se for dinheiro
-      else if (FORMA_SELECIONADA.idformapagamento == 2) {
+        desc.innerText = "Pagamento na entrega do pedido.";
+        icon.innerHTML = `<i class="fas fa-receipt"></i>`;
+      } else if (FORMA_SELECIONADA.idformapagamento == 2) {
         let troco = prompt("Qual o valor do troco?");
         if (troco != null) {
-          // valida se o troco está correto
           let _teste = parseFloat(troco);
-
           if (isNaN(_teste) || troco.trim() == "" || _teste <= 1) {
             TROCO = 0;
-            document.querySelector(
-              "#lblDescFormaPagamentoSelecionada"
-            ).innerText = `Pagamento na entrega do pedido.`;
+            desc.innerText = "Pagamento na entrega do pedido.";
           } else {
             TROCO = _teste;
-            document.querySelector(
-              "#lblDescFormaPagamentoSelecionada"
-            ).innerText = `Troco para: ${_teste
+            desc.innerText = `Troco para: ${_teste
               .toFixed(2)
               .replace(".", ",")} reais.`;
           }
         } else {
-          document.querySelector(
-            "#lblDescFormaPagamentoSelecionada"
-          ).innerText = `Pagamento na entrega do pedido.`;
+          desc.innerText = "Pagamento na entrega do pedido.";
         }
-
-        document.querySelector(
-          "#iconFormaPagamentoSelecionada"
-        ).innerHTML = `<i class="fas fa-coins"></i>`;
+        icon.innerHTML = `<i class="fas fa-coins"></i>`;
+      } else if (FORMA_SELECIONADA.idformapagamento == 5) {
+        desc.innerText = "Pix e Cartão de Crédito";
+        icon.innerHTML = `<i class="fas fa-credit-card"></i>`;
+      } else {
+        desc.innerText = "Pagamento na entrega do pedido.";
+        icon.innerHTML = `<i class="fas fa-credit-card"></i>`;
       }
-      // se for cartão
-      else {
-        document.querySelector(
-          "#lblDescFormaPagamentoSelecionada"
-        ).innerText = `Pagamento na entrega do pedido.`;
-        document.querySelector(
-          "#iconFormaPagamentoSelecionada"
-        ).innerHTML = `<i class="fas fa-credit-card"></i>`;
+
+      // muda o texto do botão conforme a forma
+      if (FORMA_SELECIONADA.idformapagamento == 5) {
+        document.getElementById("lblFazerPedido").innerText =
+          "Realizar Pagamento";
+      } else {
+        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
       }
     } else {
       document
@@ -789,10 +992,12 @@ carrinho.method = {
       document
         .querySelector("#cardAddFormaPagamento")
         .classList.remove("hidden");
-
       FORMA_SELECIONADA = null;
+
+      document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
     }
 
+    // Fecha a modal de forma correta
     carrinho.method.fecharModalActionsFormaPagamento();
   },
 
@@ -810,107 +1015,580 @@ carrinho.method = {
       .classList.add("hidden");
   },
 
+  //  -------- CUPOM DE DESCONTO  -------
+
+  carregarCuponsDisponiveis: () => {
+    app.method.get("/cupomdisponiveis", (response) => {
+      if (response.status === "success") {
+        const select = document.querySelector("#selectCupom");
+        select.innerHTML = '<option value="">Selecione um cupom</option>';
+
+        response.data.forEach((cupom) => {
+          if (cupom.tipo === "percentual") {
+            const opt = document.createElement("option");
+            opt.value = cupom.codigo;
+            opt.textContent = `${cupom.valor}% off`;
+            select.appendChild(opt);
+          }
+          // Cupons tipo "valor" (R$) não são adicionados na lista
+        });
+      }
+    });
+  },
+
+  aplicarCupomSelecionado: (codigo) => {
+    document.querySelector("#inputCupomManual").value = codigo;
+    carrinho.method.validarCupomAplicado();
+  },
+
+  validarCupomAplicado: () => {
+    const codigo = document.querySelector("#inputCupomManual").value.trim();
+
+    if (!codigo) {
+      return carrinho.method.mostrarErro(
+        "Digite ou selecione um código de cupom."
+      );
+    }
+
+    app.method.get(`/cupom/${codigo}`, (response) => {
+      if (response.status === "error") {
+        return carrinho.method.mostrarErro(
+          response.message || "Cupom inválido."
+        );
+      }
+
+      const cupom = response.data;
+      const subtotal = carrinho.method.obterTotalPedido();
+
+      if (subtotal < cupom.valor_minimo) {
+        return carrinho.method.mostrarErro(
+          `Pedido mínimo para usar este cupom: R$ ${cupom.valor_minimo
+            .toFixed(2)
+            .replace(".", ",")}`
+        );
+      }
+
+      // Calcula o desconto
+      const desconto =
+        cupom.tipo === "percentual"
+          ? (subtotal * cupom.valor) / 100
+          : cupom.valor;
+
+      // Atualiza o objeto do cupom
+      carrinho.cupom = {
+        codigo: cupom.codigo,
+        valor: desconto,
+        tipo: cupom.tipo,
+        valor_minimo: cupom.valor_minimo,
+      };
+
+      // Atualiza visualmente
+      document
+        .querySelector("#containerCupomDesconto")
+        ?.classList.remove("hidden");
+      document.querySelector("#lblDescontoCupom").innerText = `- R$ ${desconto
+        .toFixed(2)
+        .replace(".", ",")}`;
+
+      // Mensagem
+      carrinho.method.mostrarSucesso(
+        `Cupom ${cupom.codigo} aplicado: -R$ ${desconto
+          .toFixed(2)
+          .replace(".", ",")}`
+      );
+
+      // Atualiza resumo (valores fixos abaixo do carrinho)
+      carrinho.method.atualizarResumoPedido();
+
+      // ⚠️ Atualiza total no carrinho
+      requestAnimationFrame(() => {
+        carrinho.method.atualizarValorTotal();
+      });
+    });
+  },
+
+  mostrarErro: (msg) => {
+    document.querySelector("#cupomErro").innerText = "❌ " + msg;
+    document.querySelector("#cupomErro").style.display = "block";
+    document.querySelector("#cupomFeedback").style.display = "none";
+  },
+
+  mostrarSucesso: (msg) => {
+    document.querySelector("#cupomFeedback").innerText = "✅ " + msg;
+    document.querySelector("#cupomFeedback").style.display = "block";
+    document.querySelector("#cupomErro").style.display = "none";
+  },
+
+  atualizarResumoPedido: () => {
+    const subtotal = carrinho.method.obterTotalPedido();
+    const desconto = carrinho.cupom?.valor || 0;
+    const total = subtotal - desconto;
+
+    const elSubtotal = document.querySelector("#valorSubtotal");
+    const elDesconto = document.querySelector("#valorDesconto");
+    const elTotal = document.querySelector("#valorTotal");
+
+    if (elSubtotal)
+      elSubtotal.innerText = `R$ ${subtotal.toFixed(2).replace(".", ",")}`;
+    if (elDesconto)
+      elDesconto.innerText = `- R$ ${desconto.toFixed(2).replace(".", ",")}`;
+    if (elTotal) elTotal.innerText = `R$ ${total.toFixed(2).replace(".", ",")}`;
+
+    const cupomNomeEl = document.querySelector("#infoCupomNome");
+    if (cupomNomeEl) {
+      if (carrinho.cupom?.codigo) {
+        cupomNomeEl.innerText = `Cupom aplicado: ${carrinho.cupom.codigo}`;
+        cupomNomeEl.style.display = "block";
+      } else {
+        cupomNomeEl.innerText = "";
+        cupomNomeEl.style.display = "none";
+      }
+    }
+  },
+
+  // Adicione aqui sua função que calcula o subtotal real:
+  obterTotalPedido: () => {
+    let subtotal = 0;
+    CARRINHO_ATUAL.forEach((e) => {
+      let itemTotal = e.valor * e.quantidade;
+      if (e.opcionais) {
+        e.opcionais.forEach((op) => {
+          itemTotal += op.valoropcional * e.quantidade;
+        });
+      }
+      subtotal += itemTotal;
+    });
+    return subtotal;
+  },
+
   // -------------------------------
 
   // ------ REALIZAR PEDIDO ------
 
   // botão de realizar o pedido
   fazerPedido: () => {
-    if (CARRINHO_ATUAL.length > 0) {
-      // faz as validações
-
-      let checkEntrega = document.querySelector("#chkEntrega").checked;
-      let checkRetirada = document.querySelector("#chkRetirada").checked;
-
-      if (!checkEntrega && !checkRetirada) {
-        app.method.mensagem("Selecione entrega ou retirada.");
-        return;
-      }
-
-      // obtem o endereco selecionado do localstorage
-      let enderecoAtual = app.method.obterValorSessao("address");
-
-      if (checkEntrega && enderecoAtual == undefined) {
-        app.method.mensagem("Informe o endereço de entrega.");
-        return;
-      }
-
-      let enderecoSelecionado =
-        enderecoAtual != undefined ? JSON.parse(enderecoAtual) : null;
-
-      let nome = $("#txtNomeSobrenome").val().trim();
-      let celular = $("#txtCelular").val().trim();
-
-      if (nome.length <= 0) {
-        app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
-        return;
-      }
-
-      if (celular.length <= 0) {
-        app.method.mensagem("Informe o Celular, por favor.");
-        return;
-      }
-
-      if (FORMA_SELECIONADA == null) {
-        app.method.mensagem("Selecione a forma de pagamento.");
-        return;
-      }
-
-      // tudo ok, faz o pedido
-      app.method.loading(true);
-
-      var dados = {
-        entrega: checkEntrega,
-        retirada: checkRetirada,
-        cart: CARRINHO_ATUAL,
-        endereco: enderecoSelecionado,
-        idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
-        idtaxaentrega: TAXA_ATUAL_ID,
-        taxaentrega: TAXA_ATUAL,
-        idformapagamento: FORMA_SELECIONADA.idformapagamento,
-        troco: TROCO,
-        nomecliente: nome,
-        telefonecliente: celular,
-      };
-
-      app.method.post(
-        "/pedido",
-        JSON.stringify(dados),
-        (response) => {
-          console.log("response", response);
-          app.method.loading(false);
-
-          if (response.status === "error") {
-            app.method.mensagem(response.message);
-            return;
-          }
-
-          app.method.mensagem("Pedido realizado!", "green");
-
-          // salva o novo pedido
-          dados.order = response.order;
-
-          app.method.gravarValorSessao(JSON.stringify(dados), "order");
-
-          setTimeout(() => {
-            // limpa o carrinho
-            localStorage.removeItem("cart");
-            window.location.href = "/pedido.html";
-          }, 1000);
-        },
-        (error) => {
-          console.log("error", error);
-          app.method.loading(false);
-        },
-        true
-      );
-    } else {
+    if (CARRINHO_ATUAL.length === 0) {
       app.method.mensagem("Nenhum item no carrinho.");
+      return;
     }
+
+    let checkEntrega = document.querySelector("#chkEntrega").checked;
+    let checkRetirada = document.querySelector("#chkRetirada").checked;
+
+    if (!checkEntrega && !checkRetirada) {
+      app.method.mensagem("Selecione entrega ou retirada.");
+      return;
+    }
+
+    let enderecoAtual = app.method.obterValorSessao("address");
+    if (checkEntrega && !enderecoAtual) {
+      app.method.mensagem("Informe o endereço de entrega.");
+      return;
+    }
+
+    let enderecoSelecionado = enderecoAtual ? JSON.parse(enderecoAtual) : null;
+
+    let nome = $("#txtNomeSobrenome").val().trim();
+    let celular = $("#txtCelular").val().trim();
+
+    if (nome.length === 0) {
+      app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
+      return;
+    }
+
+    if (celular.length === 0) {
+      app.method.mensagem("Informe o Celular, por favor.");
+      return;
+    }
+
+    if (FORMA_SELECIONADA == null) {
+      app.method.mensagem("Selecione a forma de pagamento.");
+      return;
+    }
+
+    // 🔢 Calcula subtotal (sem taxa)
+    let subtotal = 0;
+    CARRINHO_ATUAL.forEach((item) => {
+      let itemTotal = item.valor * item.quantidade;
+      if (item.opcionais && item.opcionais.length > 0) {
+        item.opcionais.forEach((op) => {
+          itemTotal += op.valoropcional * item.quantidade;
+        });
+      }
+      subtotal += itemTotal;
+    });
+
+    // 🎟️ Aplica desconto do cupom (se houver) — sempre sobre o subtotal
+    let valorDesconto = carrinho.cupom?.valor || 0;
+
+    // 🚚 Taxa de entrega (somente se for entrega)
+    let taxaEntrega = checkEntrega ? TAXA_ATUAL : 0;
+
+    // 💰 Valor final com desconto e taxa
+    let valorTotal = subtotal + taxaEntrega - valorDesconto;
+
+    // 📦 Monta o objeto do pedido
+    const dados = {
+      entrega: checkEntrega,
+      retirada: checkRetirada,
+      cart: CARRINHO_ATUAL,
+      endereco: enderecoSelecionado,
+      idtaxaentregatipo: TAXAS_ENTREGA[0]?.idtaxaentregatipo || null,
+      idtaxaentrega: TAXA_ATUAL_ID,
+      taxaentrega: TAXA_ATUAL,
+      idformapagamento: FORMA_SELECIONADA.idformapagamento,
+      troco: TROCO,
+      nomecliente: nome,
+      telefonecliente: celular,
+      total: valorTotal,
+      valor_desconto: valorDesconto,
+      cupom_codigo: carrinho.cupom?.codigo || null,
+    };
+
+    // 🔄 Envia pedido
+    app.method.loading(true);
+
+    app.method.post(
+      "/pedido",
+      JSON.stringify(dados),
+      (response) => {
+        app.method.loading(false);
+
+        if (response.status === "error") {
+          app.method.mensagem(response.message);
+          return;
+        }
+
+        app.method.mensagem("Pedido realizado!", "green");
+
+        dados.order = response.order;
+        app.method.gravarValorSessao(JSON.stringify(dados), "order");
+
+        setTimeout(() => {
+          localStorage.removeItem("cart");
+          location.reload();
+        }, 3000);
+
+        // ✅ Finaliza via WhatsApp
+        carrinho.method.finalizarPedido(dados);
+      },
+      (error) => {
+        console.log("Erro ao finalizar pedido:", error);
+        app.method.loading(false);
+      },
+      true
+    );
+  },
+  // fazerPedido: () => {
+
+  //  if (CARRINHO_ATUAL.length > 0) {
+
+  // faz as validações
+
+  //   let checkEntrega = document.querySelector('#chkEntrega').checked;
+  //  let checkRetirada = document.querySelector('#chkRetirada').checked;
+
+  //  if (!checkEntrega && !checkRetirada) {
+  //     app.method.mensagem("Selecione entrega ou retirada.")
+  //     return;
+  // }
+
+  // obtem o endereco selecionado do localstorage
+  //  let enderecoAtual = app.method.obterValorSessao('address');
+
+  // if (checkEntrega && enderecoAtual == undefined) {
+  //     app.method.mensagem("Informe o endereço de entrega.")
+  //       return;
+  //   }
+
+  //   let enderecoSelecionado = enderecoAtual != undefined ? JSON.parse(enderecoAtual) : null;
+
+  //   let nome = $('#txtNomeSobrenome').val().trim();
+  //  let celular = $('#txtCelular').val().trim();
+
+  //    if (nome.length <= 0) {
+  //       app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
+  //       return;
+  //   }
+
+  //  if (celular.length <= 0) {
+  //       app.method.mensagem("Informe o Celular, por favor.");
+  //       return;
+  //   }
+
+  //    var dados = {
+  //         entrega: checkEntrega,
+  //        retirada: checkRetirada,
+  //        cart: CARRINHO_ATUAL,
+  //        endereco: enderecoSelecionado,
+  //        idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
+  //        idtaxaentrega: TAXA_ATUAL_ID,
+  //        taxaentrega: TAXA_ATUAL,
+  //        troco: TROCO,
+  //        nomecliente: nome,
+  //        telefonecliente: celular
+  //     }
+
+  //     if (FORMA_SELECIONADA == null) {
+  //       app.method.mensagem("Selecione a forma de pagamento.");
+  //     return;
+  //    }
+
+  //       dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
+
+  // se o cliente escolheu pagamento online (ID = 5)
+  //  if (FORMA_SELECIONADA.idformapagamento == 5) {
+  //       app.method.gravarValorSessao(JSON.stringify(dados), 'sub-order');
+  //      window.location.href = '/pagamento.html';
+  //    return;
+  //   }
+
+  //      else {
+
+  // se não for, continua o fluxo normal
+
+  //           if (FORMA_SELECIONADA == null) {
+  //             app.method.mensagem("Selecione a forma de pagamento.");
+  //             return;
+  //         }
+
+  //         dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
+
+  // tudo ok, faz o pedido
+  //         app.method.loading(true);
+
+  //         app.method.post('/pedido', JSON.stringify(dados),
+  //              (response) => {
+
+  //                  console.log('response', response)
+  //                 app.method.loading(false);
+
+  //                 if (response.status === 'error') {
+  //                    app.method.mensagem(response.message)
+  //                     return;
+  //                 }
+
+  //                 app.method.mensagem("Pedido realizado!", 'green');
+
+  // salva o novo pedido
+  //                dados.order = response.order;
+
+  //                 app.method.gravarValorSessao(JSON.stringify(dados), 'order');
+  //
+  //                 setTimeout(() => {
+  // limpa o carrinho
+  //                    localStorage.removeItem('cart');
+  //                    window.location.href = '/pedido.html'
+  //               }, 1000);
+
+  //            },
+  //             (error) => {
+  //                 console.log('error', error);
+  //                 app.method.loading(false);
+  //             }, true
+  //         );
+
+  //     }
+
+  //     }
+  //      else {
+  //         app.method.mensagem("Nenhum item no carrinho.");
+  //     }
+
+  //  },
+
+  //fazerPedido: () => {
+  //if (CARRINHO_ATUAL.length === 0) {
+  //app.method.mensagem("Nenhum item no carrinho.");
+  //return;
+  //}
+
+  //let checkEntrega = document.querySelector("#chkEntrega").checked;
+  //let checkRetirada = document.querySelector("#chkRetirada").checked;
+
+  //if (!checkEntrega && !checkRetirada) {
+  //app.method.mensagem("Selecione entrega ou retirada.");
+  //return;
+  //}
+
+  //let enderecoAtual = app.method.obterValorSessao("address");
+  //if (checkEntrega && !enderecoAtual) {
+  //app.method.mensagem("Informe o endereço de entrega.");
+  //return;
+  //}
+
+  //let enderecoSelecionado = enderecoAtual ? JSON.parse(enderecoAtual) : null;
+
+  //let nome = $("#txtNomeSobrenome").val().trim();
+  //let celular = $("#txtCelular").val().trim();
+
+  //if (nome.length === 0) {
+  //app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
+  //return;
+  //}
+
+  //if (celular.length === 0) {
+  //app.method.mensagem("Informe o Celular, por favor.");
+  //return;
+  //}
+
+  //if (FORMA_SELECIONADA == null) {
+  //app.method.mensagem("Selecione a forma de pagamento.");
+  // return;
+  //}
+
+  //let subtotal = 0;
+  //CARRINHO_ATUAL.forEach((item) => {
+  //let itemTotal = item.valor * item.quantidade;
+  // if (item.opcionais && item.opcionais.length > 0) {
+  // item.opcionais.forEach((op) => {
+  // += op.valoropcional * item.quantidade;
+  //});
+  //}
+  //subtotal += itemTotal;
+  //});
+
+  //let valorDesconto = carrinho.cupom?.valor || 0;
+  //let taxaEntrega = checkEntrega ? TAXA_ATUAL : 0;
+  //let valorTotal = subtotal + taxaEntrega - valorDesconto;
+
+  //const dados = {
+  //entrega: checkEntrega,
+  //retirada: checkRetirada,
+  //cart: CARRINHO_ATUAL,
+  //endereco: enderecoSelecionado,
+  //idtaxaentregatipo: TAXAS_ENTREGA[0]?.idtaxaentregatipo || null,
+  //idtaxaentrega: TAXA_ATUAL_ID,
+  //taxaentrega: TAXA_ATUAL,
+  //idformapagamento: FORMA_SELECIONADA.idformapagamento,
+  //: TROCO,
+  //nomecliente: nome,
+  // telefonecliente: celular,
+  // total: valorTotal,
+  //valor_desconto: valorDesconto,
+  //cupom_codigo: carrinho.cupom?.codigo || null,
+  //};
+
+  //app.method.loading(true);
+
+  // app.method.post(
+  // "/pedido",
+  // JSON.stringify(dados),
+  //(response) => {
+  // app.method.loading(false);
+
+  // if (response.status === "error") {
+  // app.method.mensagem(response.message);
+  // return;
+  // }
+
+  // app.method.mensagem("Pedido realizado!", "green");
+
+  //dados.order = response.order;
+  // app.method.gravarValorSessao(JSON.stringify(dados), "order");
+
+  // ✅ Chama o WhatsApp imediatamente após sucesso
+  //carrinho.method.finalizarPedido(dados);
+
+  // ⏳ Aguarda 3s antes de recarregar a página
+  //setTimeout(() => {
+  //  localStorage.removeItem("cart");
+  //  location.reload();
+  //}, 3000);
+  //  },
+  // (error) => {
+  //  console.log("Erro ao finalizar pedido:", error);
+  //  app.method.loading(false);
+  // },
+  //  true
+  //);
+  //},
+
+  finalizarPedido: (dados) => {
+    let formaDePagamento = "";
+
+    switch (dados.idformapagamento) {
+      case 1:
+        formaDePagamento = "PIX";
+        break;
+      case 2:
+        formaDePagamento = "DINHEIRO";
+        break;
+      case 3:
+        formaDePagamento = "CARTÃO DE CRÉDITO";
+        break;
+      case 4:
+        formaDePagamento = "CARTÃO DE DÉBITO";
+        break;
+      default:
+        formaDePagamento = "Não especificado";
+    }
+
+    let texto = `*Olá! Me chamo ${dados.nomecliente}, gostaria de fazer um pedido:*`;
+    texto += `\n📞 Meu contato: *${dados.telefonecliente}*`;
+    texto += `\n\n🛒 *Produtos no carrinho:*`;
+
+    dados.cart.forEach((item) => {
+      let subtotalItem = item.quantidade * item.valor;
+
+      texto += `\n\n━━━━━━━━━━━━━━━━━━━━`;
+      texto += `\n*${item.quantidade}x ${item.nome}*`;
+      texto += `\n💵 Subtotal: R$ ${subtotalItem.toFixed(2)}`;
+
+      if (item.opcionais && item.opcionais.length > 0) {
+        texto += `\n➕ *Opcionais:*`;
+        item.opcionais.forEach((opcional) => {
+          texto += `\n  - ${item.quantidade}x ${opcional.nomeopcional} (+ R$ ${(
+            item.quantidade * opcional.valoropcional
+          ).toFixed(2)})`;
+        });
+      }
+
+      if (item.observacao && item.observacao.trim() !== "") {
+        texto += `\n📝 *Observação:* ${item.observacao}`;
+      }
+    });
+
+    texto += `\n\n━━━━━━━━━━━━━━━━━━━━`;
+    texto += `\n💳 *Forma de pagamento:* ${formaDePagamento}`;
+
+    if (dados.retirada) {
+      texto += `\n🏃‍♂️ *Retirada no local*`;
+    } else {
+      texto += `\n🚚 *Entrega*`;
+      if (dados.endereco) {
+        texto += `\n📍 *Endereço de entrega:* ${dados.endereco.endereco}, ${dados.endereco.numero} - ${dados.endereco.bairro}, ${dados.endereco.cidade} - ${dados.endereco.estado}`;
+      }
+      texto += `\n📦 *Taxa de entrega:* R$ ${dados.taxaentrega.toFixed(2)}`;
+    }
+
+    texto += `\n\n💰 *Valor total do pedido:* R$ ${dados.total.toFixed(2)}`;
+
+    // 🔗 Link para acompanhar pedido
+    texto += `\n\n📍 *Acompanhe seu pedido:* https://sistemachefdelivery.com.br/pedido.html`;
+
+    let encode = encodeURIComponent(texto);
+    let url = `https://wa.me/5533999694795?text=${encode}`;
+
+    // ✅ Cria link e simula clique
+    let link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank"; // Abre em nova aba
+    link.style.display = "none";
+    document.body.appendChild(link);
+
+    setTimeout(() => {
+      link.click();
+      document.body.removeChild(link); // Remove o link após clique
+    }, 100); // Atraso mínimo
   },
 
   // -------------------------------
 };
+
+window.addEventListener("DOMContentLoaded", () => {
+  carrinho.method.carregarCuponsDisponiveis();
+});
 
 carrinho.template = {
   produto: `
