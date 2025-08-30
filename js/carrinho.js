@@ -1120,9 +1120,6 @@ carrinho.method = {
           localStorage.removeItem("cart");
           location.reload();
         }, 3000);
-
-        // ✅ Finaliza via WhatsApp
-        carrinho.method.finalizarPedido(dados);
       },
       (error) => {
         console.log("Erro ao finalizar pedido:", error);
@@ -1355,85 +1352,6 @@ carrinho.method = {
   //  true
   //);
   //},
-
-  finalizarPedido: (dados) => {
-    let formaDePagamento = "";
-
-    switch (dados.idformapagamento) {
-      case 1:
-        formaDePagamento = "PIX";
-        break;
-      case 2:
-        formaDePagamento = "DINHEIRO";
-        break;
-      case 3:
-        formaDePagamento = "CARTÃO DE CRÉDITO";
-        break;
-      case 4:
-        formaDePagamento = "CARTÃO DE DÉBITO";
-        break;
-      default:
-        formaDePagamento = "Não especificado";
-    }
-
-    let texto = `*Olá! Me chamo ${dados.nomecliente}, gostaria de fazer um pedido:*`;
-    texto += `\n📞 Meu contato: *${dados.telefonecliente}*`;
-    texto += `\n\n🛒 *Produtos no carrinho:*`;
-
-    dados.cart.forEach((item) => {
-      let subtotalItem = item.quantidade * item.valor;
-
-      texto += `\n\n━━━━━━━━━━━━━━━━━━━━`;
-      texto += `\n*${item.quantidade}x ${item.nome}*`;
-      texto += `\n💵 Subtotal: R$ ${subtotalItem.toFixed(2)}`;
-
-      if (item.opcionais && item.opcionais.length > 0) {
-        texto += `\n➕ *Opcionais:*`;
-        item.opcionais.forEach((opcional) => {
-          texto += `\n  - ${item.quantidade}x ${opcional.nomeopcional} (+ R$ ${(
-            item.quantidade * opcional.valoropcional
-          ).toFixed(2)})`;
-        });
-      }
-
-      if (item.observacao && item.observacao.trim() !== "") {
-        texto += `\n📝 *Observação:* ${item.observacao}`;
-      }
-    });
-
-    texto += `\n\n━━━━━━━━━━━━━━━━━━━━`;
-    texto += `\n💳 *Forma de pagamento:* ${formaDePagamento}`;
-
-    if (dados.retirada) {
-      texto += `\n🏃‍♂️ *Retirada no local*`;
-    } else {
-      texto += `\n🚚 *Entrega*`;
-      if (dados.endereco) {
-        texto += `\n📍 *Endereço de entrega:* ${dados.endereco.endereco}, ${dados.endereco.numero} - ${dados.endereco.bairro}, ${dados.endereco.cidade} - ${dados.endereco.estado}`;
-      }
-      texto += `\n📦 *Taxa de entrega:* R$ ${dados.taxaentrega.toFixed(2)}`;
-    }
-
-    texto += `\n\n💰 *Valor total do pedido:* R$ ${dados.total.toFixed(2)}`;
-
-    // 🔗 Link para acompanhar pedido
-    texto += `\n\n📍 *Acompanhe seu pedido:* https://sistemachefdelivery.com.br/pedido.html`;
-
-    let encode = encodeURIComponent(texto);
-    let url = `https://wa.me/5533999694795?text=${encode}`;
-
-    // ✅ Cria link e simula clique
-    let link = document.createElement("a");
-    link.href = url;
-    link.target = "_blank"; // Abre em nova aba
-    link.style.display = "none";
-    document.body.appendChild(link);
-
-    setTimeout(() => {
-      link.click();
-      document.body.removeChild(link); // Remove o link após clique
-    }, 100); // Atraso mínimo
-  },
 
   // -------------------------------
 };
