@@ -627,6 +627,114 @@ carrinho.method = {
     MODAL_ENDERECO.hide();
   },
 
+  buscarPorEndereco: () => {
+    let rua = document.querySelector("#txtEndereco").value;
+    let bairro = document.querySelector("#txtBairro").value;
+    let cidade = document.querySelector("#txtCidade").value;
+
+    if (!rua || !bairro || !cidade) {
+      app.method.mensagem("Preencha rua, bairro e cidade.");
+      return;
+    }
+
+    // Monta a query para o Google Maps
+    let enderecoQuery = encodeURIComponent(
+      `${rua}, ${bairro}, ${cidade}, Brasil`
+    );
+    let apiKey = "AIzaSyBeqAHQL5djcTkZgtJuCa24jJSnkTiDby8"; // coloque sua chave
+
+    let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${enderecoQuery}&key=${apiKey}`;
+
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "OK" && data.results.length > 0) {
+          let resultado = data.results[0];
+          let endereco = resultado.formatted_address;
+          let localizacao = resultado.geometry.location;
+
+          console.log("Endereço encontrado:", endereco);
+          console.log(
+            "Latitude:",
+            localizacao.lat,
+            "Longitude:",
+            localizacao.lng
+          );
+
+          // Aqui você pode salvar usando seu método
+          app.method.gravarValorSessao("address", endereco);
+        } else {
+          app.method.mensagem("Endereço não encontrado.");
+        }
+      })
+      .catch((error) => {
+        console.error("Erro ao buscar endereço:", error);
+        app.method.mensagem("Erro na busca do endereço.");
+      });
+  },
+
+  buscarEnderecoGoogle: () => {
+    const rua = document.getElementById("txtEndereco").value.trim();
+    const cidade = document.getElementById("txtCidade").value.trim();
+    const estado = document.getElementById("ddlUf").value.trim();
+
+    if (rua !== "") {
+      const query = `${rua}, ${cidade}, ${estado}`;
+      const apiKey = "AIzaSyBeqAHQL5djcTkZgtJuCa24jJSnkTiDby8"; // troque pela sua chave real
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        query
+      )}&key=${apiKey}`;
+
+      fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.status === "OK" && data.results.length > 0) {
+            const result = data.results[0];
+            const address = result.address_components;
+
+            // Preencher os campos com base nos componentes
+            address.forEach((component) => {
+              if (component.types.includes("route")) {
+                document.getElementById("txtEndereco").value =
+                  component.long_name;
+              }
+              if (
+                component.types.includes("sublocality") ||
+                component.types.includes("neighborhood")
+              ) {
+                document.getElementById("txtBairro").value =
+                  component.long_name;
+              }
+              if (component.types.includes("locality")) {
+                document.getElementById("txtCidade").value =
+                  component.long_name;
+              }
+              if (component.types.includes("administrative_area_level_1")) {
+                document.getElementById("ddlUf").value = component.short_name;
+              }
+            });
+
+            // Coordenadas (se precisar)
+            document.getElementById("txtLatitude").value =
+              result.geometry.location.lat;
+            document.getElementById("txtLongitude").value =
+              result.geometry.location.lng;
+
+            document.getElementById("txtNumero").focus();
+          } else {
+            app.method.mensagem("Endereço não encontrado.");
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          app.method.mensagem("Erro ao buscar o endereço.");
+        });
+    } else {
+      app.method.mensagem("Digite o nome da rua.");
+      document.getElementById("txtEndereco").focus();
+    }
+  },
+
   // API ViaCEP
   buscarCep: () => {
     // cria a variavel com o valor do cep
