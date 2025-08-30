@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistema Chef Delivery</title>
+    <title>AD lanches</title>
 
     <link rel="stylesheet" href="./css/bootstrap.min.css" />
     <link rel="stylesheet" href="./css/fontawesome.css" />
@@ -56,20 +56,6 @@
               <i class="fas fa-motorcycle"></i>&nbsp; <b>Taxa de entrega</b>
             </p>
             <p class="price mb-0"><b id="lblTaxaEntrega">-</b></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Desconto do cupom -->
-      <div class="card mb-2 hidden" id="containerCupomDesconto">
-        <div class="detalhes-produto">
-          <div class="infos-produto">
-            <p class="name mb-0">
-              <i class="fas fa-ticket-alt"></i>&nbsp; <b>Desconto do Cupom</b>
-            </p>
-            <p class="price mb-0 text-danger">
-              <b id="lblDescontoCupom">- R$ 0,00</b>
-            </p>
           </div>
         </div>
       </div>
@@ -182,7 +168,7 @@
         />
       </div>
 
-      <div class="container-group mb-5 hidden" id="container-como-pagar">
+      <div class="container-group mb-5">
         <span class="badge">Obrigatório</span>
         <p class="title-categoria mb-0"><b>Como você prefere pagar?</b></p>
         <span class="sub-title-categoria">Pagamento na entrega</span>
@@ -227,10 +213,9 @@
     <a
       class="btn btn-yellow btn-full hidden"
       id="btnFazerPedido"
-      onclick="carrinho.method.fazerPedido()"
+      onclick="carrinho.method.fazerPedido(); sendMessage()"
     >
-      <span id="lblFazerPedido">Fazer pedido</span>
-      <span id="lblTotalCarrinhoBotao"></span>
+      Fazer pedido <span id="lblTotalCarrinhoBotao"></span>
     </a>
 
     <a
@@ -240,7 +225,6 @@
     >
       Voltar para o cardápio
     </a>
-
     <!-- Modal actions Produto -->
     <div class="modal-actions hidden" id="modalActionsProduto">
       <div
@@ -248,6 +232,7 @@
         onclick="carrinho.method.fecharModalActionsProduto()"
       ></div>
       <div class="width-fix container-modal-actions">
+        <!-- <a href="#!" onclick="carrinho.method.editarProdutoCarrinho()">Editar item</a> -->
         <a
           href="#!"
           class="color-red"
@@ -419,6 +404,17 @@
         onclick="carrinho.method.fecharModalActionsFormaPagamento()"
       ></div>
       <div class="width-fix container-modal-actions"></div>
+    </div>
+
+    <!-- Modal para dinheiro -->
+    <div class="modal-actions hidden" id="modalActionsDinheiro">
+      <div class="backdrop" onclick="fecharModalDinheiro()"></div>
+      <div class="width-fix container-modal-actions">
+        <label for="txtDinheiro">Troco para qual valor?</label>
+        <input type="number" class="form-control" id="txtDinheiro" />
+        <button onclick="confirmarTroco()">Confirmar</button>
+        <button onclick="fecharModalDinheiro()">Cancelar</button>
+      </div>
     </div>
 
     <script type="text/javascript" src="./js/jquery.min.js"></script>
