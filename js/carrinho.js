@@ -573,12 +573,6 @@ carrinho.method = {
     let complemento = document.getElementById("txtComplemento").value.trim();
     let uf = document.getElementById("ddlUf").value.trim();
 
-    if (cep.length <= 0) {
-      app.method.mensagem("Informe o CEP, por favor.");
-      document.getElementById("txtCEP").focus();
-      return;
-    }
-
     if (endereco.length <= 0) {
       app.method.mensagem("Informe o Endereço, por favor.");
       document.getElementById("txtEndereco").focus();
