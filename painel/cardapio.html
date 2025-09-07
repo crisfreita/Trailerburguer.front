@@ -21,7 +21,7 @@
     </div>
 
     <div class="loader-full hidden">
-        <img src="../img/Imagem_do_WhatsApp_de_2025-06-22_à_s__11.40.53_56760167-removebg-preview.png" width="100" />
+        <img src="../img/loader.png" width="100" />
     </div>
 
     <div id="overlay" onclick="toggleMenu()" style="display:none;"></div>
@@ -266,7 +266,16 @@
 
                         <div class="col-12">
                             <div class="form-group">
-                                <p class="title-categoria mb-0 mt-4"><b>Preço (R$):</b></p>
+                               <p class="title-categoria mb-0 mt-4"><b>Preço Para Promoção (R$):</b></p>
+                               <input id="txtPrecoPromocional" type="text" class="form-control money" placeholder="Ex: 19,90" />
+                               <b>Exemplo do valor</b>
+                                <span style="text-decoration: line-through; color: #999; font-size: 0.9em;"> R$ 19,90 
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-group">
+                                <p class="title-categoria mb-0 mt-4"><b>Preço Original (R$):</b></p>
                                 <input id="txtPrecoProduto" type="text" class="form-control money" />
                             </div>
                         </div>

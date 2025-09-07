@@ -714,7 +714,7 @@ pedido.method = {
     </style>
   </head>
   <body>
-    <h2>AÇAÍ DO TUBA</h2>
+    <h2>TRAILER BURGUER</h2>
     <p>${dataHora}</p>
     <p><strong>Cliente:</strong> ${nomeCliente}</p>
     <p><strong>Telefone:</strong> ${telefoneCliente}</p>
