@@ -170,6 +170,9 @@ item.method = {
                 for (let index = 0; index < opcional.length; index++) {
                     let element = opcional[index];
 
+                       // ✅ Ignora itens inativos
+                if (!element.ativo) continue;
+
                     let valor = '';
 
                     if (element.valoropcional > 0) {
@@ -317,20 +320,24 @@ item.method = {
         if (obrigatorio) {
 
             // valida quantos opcionais foram selecionados
-            let filtroOpcionais = OPCIONAIS_SELECIONADOS.filter((e) => { return e.idopcional == idopcional });
-
-            if (filtroOpcionais.length >= opcional[0].maximo) {
-                // remove as validações
-                let filtroValidacoes = VALIDACOES.filter((e) => { return e.idopcional != idopcional });
-                VALIDACOES = filtroValidacoes; 
+            let filtroOpcionais = OPCIONAIS_SELECIONADOS.filter((e) => e.idopcional == idopcional);
+        
+            // verifica se atingiu o mínimo exigido
+            if (filtroOpcionais.length >= opcional[0].minimo) {
+                // remove a validação desse opcional
+                let filtroValidacoes = VALIDACOES.filter((e) => e.idopcional != idopcional);
+                VALIDACOES = filtroValidacoes;
                 document.querySelector('#badge-obrigatorio-' + idopcional).innerHTML = '<i class="fas fa-check"></i>';
-            }
-            else {
-                VALIDACOES.push({ idopcional: idopcional });
+            } else {
+                // adiciona a validação se ainda não atingiu o mínimo
+                let jaExiste = VALIDACOES.some((e) => e.idopcional == idopcional);
+                if (!jaExiste) {
+                    VALIDACOES.push({ idopcional: idopcional });
+                }
                 document.querySelector('#badge-obrigatorio-' + idopcional).innerHTML = 'Obrigatório';
             }
-
         }
+        
 
         item.method.atualizarSacola();
 
@@ -439,28 +446,31 @@ item.method = {
 
     adicionarAoCarrinho: () => {
 
+        const notificationSound = new Audio('../../painel/assets/addcarrinho.mp3');
+        notificationSound.volume = 0.2;
+    
         let observacao = document.querySelector("#txtObservacao").value.trim();
-
+    
         // valida os campos
         if (VALIDACOES.length > 0) {
             app.method.mensagem("Selecione os campos obrigatórios.");
             return;
         }
-
+    
         // primeiro, pego o carrinho que já existe no local
         let carrinho = app.method.obterValorSessao('cart');
-
+    
         // inicia um carrinho
         let cart = {
             itens: []
         };
-
+    
         if (carrinho != undefined) {
             cart = JSON.parse(carrinho);
         }
-
+    
         let guid = app.method.criarGuid();
-
+    
         cart.itens.push({
             guid: guid,
             idproduto: PRODUTO.idproduto,
@@ -470,18 +480,20 @@ item.method = {
             quantidade: QUANTIDADE_SELECIONADA,
             observacao: observacao,
             opcionais: OPCIONAIS_SELECIONADOS
-        })
-
+        });
+    
         // seta o produto no localstorage
         app.method.gravarValorSessao(JSON.stringify(cart), 'cart');
-
+    
+        // toca o som de notificação
+        notificationSound.play();
+    
         app.method.mensagem('Item adicionado ao carrinho.', 'green');
-
+    
         setTimeout(() => {
             window.location.href = '/index.html';
         }, 1500);
-
-
+    
     }
 
 }

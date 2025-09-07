@@ -19,6 +19,11 @@ var MODAL_ENDERECO = new bootstrap.Modal(
   document.getElementById("modalEndereco")
 );
 
+var PAGAMENTO_ONLINE = false;
+
+// Armazena os cupons válidos recebidos do backend
+var cuponsValidos = {};
+
 carrinho.event = {
   init: () => {
     $(".cep").mask("00000-000");
@@ -134,28 +139,34 @@ carrinho.method = {
   // atualiza o valor total do carrinho
   atualizarValorTotal: () => {
     if (CARRINHO_ATUAL.length > 0) {
-      let total = 0;
+      let subtotal = 0;
 
-      CARRINHO_ATUAL.forEach((e, i) => {
-        let subTotal = 0;
+      CARRINHO_ATUAL.forEach((e) => {
+        let itemTotal = e.quantidade * e.valor;
 
-        if (e.opcionais.length > 0) {
-          // percorre a lista de opcionais
-          for (let index = 0; index < e.opcionais.length; index++) {
-            let element = e.opcionais[index];
-            subTotal += element.valoropcional * e.quantidade;
-          }
+        if (e.opcionais?.length > 0) {
+          e.opcionais.forEach((opcional) => {
+            itemTotal += opcional.valoropcional * e.quantidade;
+          });
         }
 
-        subTotal += e.quantidade * e.valor;
-        total += subTotal;
+        subtotal += itemTotal;
       });
 
-      // validar taxa entrega
-      if (TAXA_ATUAL > 0) {
-        total += TAXA_ATUAL;
+      const valorDesconto = carrinho.cupom?.valor || 0;
+      const subtotalComDesconto = Math.max(0, subtotal - valorDesconto);
+      const totalFinal = subtotalComDesconto + (TAXA_ATUAL || 0);
 
-        // exibe o label da taxa
+      // Atualiza valores visuais
+      document.querySelector("#lblTotalCarrinho").innerText = `R$ ${totalFinal
+        .toFixed(2)
+        .replace(".", ",")}`;
+      document.querySelector(
+        "#lblTotalCarrinhoBotao"
+      ).innerText = `R$ ${totalFinal.toFixed(2).replace(".", ",")}`;
+
+      // Taxa de entrega
+      if (TAXA_ATUAL > 0) {
         document
           .querySelector("#containerTaxaEntrega")
           .classList.remove("hidden");
@@ -167,16 +178,24 @@ carrinho.method = {
         document.querySelector("#lblTaxaEntrega").innerText = "-";
       }
 
-      document.querySelector("#lblTotalCarrinho").innerText = `R$ ${total
-        .toFixed(2)
-        .replace(".", ",")}`;
-      document.querySelector("#lblTotalCarrinhoBotao").innerText = `R$ ${total
-        .toFixed(2)
-        .replace(".", ",")}`;
+      // Desconto do cupom
+      if (valorDesconto > 0) {
+        document
+          .querySelector("#containerCupomDesconto")
+          .classList.remove("hidden");
+        document.querySelector(
+          "#lblDescontoCupom"
+        ).innerText = `- R$ ${valorDesconto.toFixed(2).replace(".", ",")}`;
+      } else {
+        document
+          .querySelector("#containerCupomDesconto")
+          .classList.add("hidden");
+        document.querySelector("#lblDescontoCupom").innerText = "- R$ 0,00";
+      }
     }
   },
 
-  // abre a modal para "editar" ou "remover" o produto
+  // abre a modal para 'remover' o produto
   abrirModalOpcoesProduto: (guid) => {
     PRODUTO_SELECIONADO = guid;
     document.querySelector("#modalActionsProduto").classList.remove("hidden");
@@ -188,57 +207,11 @@ carrinho.method = {
     document.querySelector("#modalActionsProduto").classList.add("hidden");
   },
 
-  // edita o produto do carrinho
-  editarProdutoCarrinho: () => {
-    if (PRODUTO_SELECIONADO.length > 0) {
-      let carrinhoLocal = app.method.obterValorSessao("cart");
-
-      if (carrinhoLocal != undefined) {
-        let cart = JSON.parse(carrinhoLocal);
-
-        if (cart.itens.length > 0) {
-          // Localiza o produto no carrinho pelo guid
-          let produto = cart.itens.find((e) => {
-            return e.guid != PRODUTO_SELECIONADO;
-          });
-
-          if (produto) {
-            // Se a nova quantidade for 0, remove o produto
-            if (novaQuantidade <= 0) {
-              cart.itens = cart.itens.filter((e) => {
-                return e.guid != PRODUTO_SELECIONADO;
-              });
-              app.method.mensagem("Item removido.", "green");
-            } else {
-              // Atualiza a quantidade do produto
-              produto.quantidade = novaQuantidade;
-              app.method.mensagem("Quantidade atualizada.", "green");
-            }
-
-            // Salva o novo carrinho
-            app.method.gravarValorSessao(JSON.stringify(cart), "cart");
-
-            // Recarrega o carrinho
-            carrinho.method.obterCarrinho();
-
-            // Reseta a seleção de produto
-            document
-              .querySelector("#modalActionsProduto")
-              .classList.add("hidden");
-          } else {
-            app.method.mensagem("Produto não encontrado no carrinho.", "red");
-          }
-        }
-      } else {
-        app.method.mensagem("Carrinho vazio.", "red");
-      }
-    } else {
-      app.method.mensagem("Nenhum produto selecionado.", "red");
-    }
-  },
-
   // remove o produto do carrinho
   removerProdutoCarrinho: () => {
+    const notificationSound = new Audio("../../painel/assets/ops.mp3");
+    notificationSound.volume = 0.2;
+
     if (PRODUTO_SELECIONADO.length > 0) {
       let carrinhoLocal = app.method.obterValorSessao("cart");
 
@@ -261,6 +234,7 @@ carrinho.method = {
           document
             .querySelector("#modalActionsProduto")
             .classList.add("hidden");
+          notificationSound.play();
 
           app.method.mensagem("Item removido.", "green");
         }
@@ -788,7 +762,7 @@ carrinho.method = {
     document.querySelector("#modalActionsEndereco").classList.add("hidden");
   },
 
-  // edita o endereço do carrinho
+  // remove o endereço do carrinho
   editarEnderecoCarrinho: () => {
     let enderecoAtual = app.method.obterValorSessao("address");
 
@@ -847,6 +821,27 @@ carrinho.method = {
   // carrega as formas de pagamento na tela
   carregarFormasPagamento: (list) => {
     if (list.length > 0) {
+      // antes, valida se tem a forma de pagamento online ativa
+      let pagamentoonline = list.filter((e) => {
+        return e.idformapagamento === 5;
+      });
+
+      // existe pagamento online
+      if (pagamentoonline.length > 0) {
+        // oculta a opção de 'Como prefere pagar'
+        document.getElementById("container-como-pagar").classList.add("hidden");
+        document.getElementById("lblFazerPedido").innerText =
+          "Realizar Pagamento";
+        PAGAMENTO_ONLINE = true;
+      } else {
+        // exibe a opção de como prefere pagar
+        document
+          .getElementById("container-como-pagar")
+          .classList.remove("hidden");
+        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
+        PAGAMENTO_ONLINE = false;
+      }
+
       list.forEach((e, i) => {
         let temp = `<a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">${e.nome}</a>`;
 
@@ -961,123 +956,270 @@ carrinho.method = {
       .classList.add("hidden");
   },
 
+  //  -------- CUPOM DE DESCONTO  -------
+
+  carregarCuponsDisponiveis: () => {
+    app.method.get("/cupomdisponiveis", (response) => {
+      if (response.status === "success") {
+        const select = document.querySelector("#selectCupom");
+        select.innerHTML = '<option value="">Selecione um cupom</option>';
+
+        response.data.forEach((cupom) => {
+          if (cupom.tipo === "percentual") {
+            const opt = document.createElement("option");
+            opt.value = cupom.codigo;
+            opt.textContent = `${cupom.valor}% off`;
+            select.appendChild(opt);
+          }
+          // Cupons tipo "valor" (R$) não são adicionados na lista
+        });
+      }
+    });
+  },
+
+  aplicarCupomSelecionado: (codigo) => {
+    document.querySelector("#inputCupomManual").value = codigo;
+    carrinho.method.validarCupomAplicado();
+  },
+
+  validarCupomAplicado: () => {
+    const codigo = document.querySelector("#inputCupomManual").value.trim();
+
+    if (!codigo) {
+      return carrinho.method.mostrarErro(
+        "Digite ou selecione um código de cupom."
+      );
+    }
+
+    app.method.get(`/cupom/${codigo}`, (response) => {
+      if (response.status === "error") {
+        return carrinho.method.mostrarErro(
+          response.message || "Cupom inválido."
+        );
+      }
+
+      const cupom = response.data;
+      const subtotal = carrinho.method.obterTotalPedido();
+
+      if (subtotal < cupom.valor_minimo) {
+        return carrinho.method.mostrarErro(
+          `Pedido mínimo para usar este cupom: R$ ${cupom.valor_minimo
+            .toFixed(2)
+            .replace(".", ",")}`
+        );
+      }
+
+      // Calcula o desconto
+      const desconto =
+        cupom.tipo === "percentual"
+          ? (subtotal * cupom.valor) / 100
+          : cupom.valor;
+
+      // Atualiza o objeto do cupom
+      carrinho.cupom = {
+        codigo: cupom.codigo,
+        valor: desconto,
+        tipo: cupom.tipo,
+        valor_minimo: cupom.valor_minimo,
+      };
+
+      // Atualiza visualmente
+      document
+        .querySelector("#containerCupomDesconto")
+        ?.classList.remove("hidden");
+      document.querySelector("#lblDescontoCupom").innerText = `- R$ ${desconto
+        .toFixed(2)
+        .replace(".", ",")}`;
+
+      // Mensagem
+      carrinho.method.mostrarSucesso(
+        `Cupom ${cupom.codigo} aplicado: -R$ ${desconto
+          .toFixed(2)
+          .replace(".", ",")}`
+      );
+
+      // Atualiza resumo (valores fixos abaixo do carrinho)
+      carrinho.method.atualizarResumoPedido();
+
+      // ⚠️ Atualiza total no carrinho
+      requestAnimationFrame(() => {
+        carrinho.method.atualizarValorTotal();
+      });
+    });
+  },
+
+  mostrarErro: (msg) => {
+    document.querySelector("#cupomErro").innerText = "❌ " + msg;
+    document.querySelector("#cupomErro").style.display = "block";
+    document.querySelector("#cupomFeedback").style.display = "none";
+  },
+
+  mostrarSucesso: (msg) => {
+    document.querySelector("#cupomFeedback").innerText = "✅ " + msg;
+    document.querySelector("#cupomFeedback").style.display = "block";
+    document.querySelector("#cupomErro").style.display = "none";
+  },
+
+  atualizarResumoPedido: () => {
+    const subtotal = carrinho.method.obterTotalPedido();
+    const desconto = carrinho.cupom?.valor || 0;
+    const total = subtotal - desconto;
+
+    const elSubtotal = document.querySelector("#valorSubtotal");
+    const elDesconto = document.querySelector("#valorDesconto");
+    const elTotal = document.querySelector("#valorTotal");
+
+    if (elSubtotal)
+      elSubtotal.innerText = `R$ ${subtotal.toFixed(2).replace(".", ",")}`;
+    if (elDesconto)
+      elDesconto.innerText = `- R$ ${desconto.toFixed(2).replace(".", ",")}`;
+    if (elTotal) elTotal.innerText = `R$ ${total.toFixed(2).replace(".", ",")}`;
+
+    const cupomNomeEl = document.querySelector("#infoCupomNome");
+    if (cupomNomeEl) {
+      if (carrinho.cupom?.codigo) {
+        cupomNomeEl.innerText = `Cupom aplicado: ${carrinho.cupom.codigo}`;
+        cupomNomeEl.style.display = "block";
+      } else {
+        cupomNomeEl.innerText = "";
+        cupomNomeEl.style.display = "none";
+      }
+    }
+  },
+
+  // Adicione aqui sua função que calcula o subtotal real:
+  obterTotalPedido: () => {
+    let subtotal = 0;
+    CARRINHO_ATUAL.forEach((e) => {
+      let itemTotal = e.valor * e.quantidade;
+      if (e.opcionais) {
+        e.opcionais.forEach((op) => {
+          itemTotal += op.valoropcional * e.quantidade;
+        });
+      }
+      subtotal += itemTotal;
+    });
+    return subtotal;
+  },
+
   // -------------------------------
 
   // ------ REALIZAR PEDIDO ------
 
   // botão de realizar o pedido
+
   fazerPedido: () => {
-    if (CARRINHO_ATUAL.length === 0) {
-      app.method.mensagem("Nenhum item no carrinho.");
-      return;
-    }
+    if (CARRINHO_ATUAL.length > 0) {
+      // Validações
+      let checkEntrega = document.querySelector("#chkEntrega").checked;
+      let checkRetirada = document.querySelector("#chkRetirada").checked;
 
-    let checkEntrega = document.querySelector("#chkEntrega").checked;
-    let checkRetirada = document.querySelector("#chkRetirada").checked;
-
-    if (!checkEntrega && !checkRetirada) {
-      app.method.mensagem("Selecione entrega ou retirada.");
-      return;
-    }
-
-    let enderecoAtual = app.method.obterValorSessao("address");
-    if (checkEntrega && !enderecoAtual) {
-      app.method.mensagem("Informe o endereço de entrega.");
-      return;
-    }
-
-    let enderecoSelecionado = enderecoAtual ? JSON.parse(enderecoAtual) : null;
-
-    let nome = $("#txtNomeSobrenome").val().trim();
-    let celular = $("#txtCelular").val().trim();
-
-    if (nome.length === 0) {
-      app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
-      return;
-    }
-
-    if (celular.length === 0) {
-      app.method.mensagem("Informe o Celular, por favor.");
-      return;
-    }
-
-    if (FORMA_SELECIONADA == null) {
-      app.method.mensagem("Selecione a forma de pagamento.");
-      return;
-    }
-
-    // 🔢 Calcula subtotal (sem taxa)
-    let subtotal = 0;
-    CARRINHO_ATUAL.forEach((item) => {
-      let itemTotal = item.valor * item.quantidade;
-      if (item.opcionais && item.opcionais.length > 0) {
-        item.opcionais.forEach((op) => {
-          itemTotal += op.valoropcional * item.quantidade;
-        });
+      if (!checkEntrega && !checkRetirada) {
+        app.method.mensagem("Selecione entrega ou retirada.");
+        return;
       }
-      subtotal += itemTotal;
-    });
 
-    // 🎟️ Aplica desconto do cupom (se houver) — sempre sobre o subtotal
-    let valorDesconto = carrinho.cupom?.valor || 0;
+      // Obtém o endereço selecionado do localStorage
+      let enderecoAtual = app.method.obterValorSessao("address");
+      if (checkEntrega && enderecoAtual == undefined) {
+        app.method.mensagem("Informe o endereço de entrega.");
+        return;
+      }
+      let enderecoSelecionado =
+        enderecoAtual != undefined ? JSON.parse(enderecoAtual) : null;
 
-    // 🚚 Taxa de entrega (somente se for entrega)
-    let taxaEntrega = checkEntrega ? TAXA_ATUAL : 0;
+      let nome = $("#txtNomeSobrenome").val().trim();
+      let celular = $("#txtCelular").val().trim();
 
-    // 💰 Valor final com desconto e taxa
-    let valorTotal = subtotal + taxaEntrega - valorDesconto;
+      if (nome.length <= 0) {
+        app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
+        return;
+      }
+      if (celular.length <= 0) {
+        app.method.mensagem("Informe o Celular, por favor.");
+        return;
+      }
+      if (FORMA_SELECIONADA == null) {
+        app.method.mensagem("Selecione a forma de pagamento.");
+        return;
+      }
 
-    // 📦 Monta o objeto do pedido
-    const dados = {
-      entrega: checkEntrega,
-      retirada: checkRetirada,
-      cart: CARRINHO_ATUAL,
-      endereco: enderecoSelecionado,
-      idtaxaentregatipo: TAXAS_ENTREGA[0]?.idtaxaentregatipo || null,
-      idtaxaentrega: TAXA_ATUAL_ID,
-      taxaentrega: TAXA_ATUAL,
-      idformapagamento: FORMA_SELECIONADA.idformapagamento,
-      troco: TROCO,
-      nomecliente: nome,
-      telefonecliente: celular,
-      total: valorTotal,
-      valor_desconto: valorDesconto,
-      cupom_codigo: carrinho.cupom?.codigo || null,
-    };
+      // Tudo ok, prossegue com o pedido
+      app.method.loading(true);
 
-    // 🔄 Envia pedido
-    app.method.loading(true);
+      // Calcula o valor total do pedido
+      let valorTotal = 0;
+      CARRINHO_ATUAL.forEach((item) => {
+        let subtotalItem = item.quantidade * item.valor;
 
-    app.method.post(
-      "/pedido",
-      JSON.stringify(dados),
-      (response) => {
-        app.method.loading(false);
-
-        if (response.status === "error") {
-          app.method.mensagem(response.message);
-          return;
+        // Adiciona o valor dos opcionais
+        if (item.opcionais && item.opcionais.length > 0) {
+          item.opcionais.forEach((opcional) => {
+            subtotalItem += item.quantidade * opcional.valoropcional;
+          });
         }
 
-        app.method.mensagem("Pedido realizado!", "green");
+        valorTotal += subtotalItem;
+      });
 
-        dados.order = response.order;
-        app.method.gravarValorSessao(JSON.stringify(dados), "order");
+      // Adiciona a taxa de entrega (se aplicável)
+      if (checkEntrega) {
+        valorTotal += TAXA_ATUAL;
+      }
 
-        setTimeout(() => {
-          localStorage.removeItem("cart");
-          location.reload();
-        }, 3000);
+      // Cria o objeto `dados`
+      var dados = {
+        entrega: checkEntrega,
+        retirada: checkRetirada,
+        cart: CARRINHO_ATUAL,
+        endereco: enderecoSelecionado,
+        idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
+        idtaxaentrega: TAXA_ATUAL_ID,
+        taxaentrega: TAXA_ATUAL,
+        idformapagamento: FORMA_SELECIONADA.idformapagamento,
+        troco: TROCO,
+        nomecliente: nome,
+        telefonecliente: celular,
+        total: valorTotal, // Inclui o valor total calculado
+      };
 
-        // ✅ Finaliza via WhatsApp
-        carrinho.method.finalizarPedido(dados);
-      },
-      (error) => {
-        console.log("Erro ao finalizar pedido:", error);
-        app.method.loading(false);
-      },
-      true
-    );
+      // Faz a requisição para salvar o pedido
+      app.method.post(
+        "/pedido",
+        JSON.stringify(dados),
+        (response) => {
+          console.log("response", response);
+          app.method.loading(false);
+
+          if (response.status === "error") {
+            app.method.mensagem(response.message);
+            return;
+          }
+
+          app.method.mensagem("Pedido realizado!", "green");
+
+          // Salva o novo pedido
+          dados.order = response.order;
+          app.method.gravarValorSessao(JSON.stringify(dados), "order");
+
+          setTimeout(() => {
+            // Limpa o carrinho
+            localStorage.removeItem("cart");
+            location.reload();
+          }, 1000);
+
+          // Chama a função para finalizar o pedido via WhatsApp
+          carrinho.method.finalizarPedido(dados);
+        },
+        (error) => {
+          console.log("error", error);
+          app.method.loading(false);
+        },
+        true
+      );
+    } else {
+      app.method.mensagem("Nenhum item no carrinho.");
+    }
   },
 
   finalizarPedido: (dados) => {
@@ -1141,10 +1283,10 @@ carrinho.method = {
     texto += `\n\n💰 *Valor total do pedido:* R$ ${dados.total.toFixed(2)}`;
 
     // 🔗 Link para acompanhar pedido
-    texto += `\n\n📍 *Acompanhe seu pedido:* https://sistemachefdelivery.com.br/pedido.html`;
+    texto += `\n\n📍 *Acompanhe seu pedido:* https://trailerburguer.com.br/pedido.html`;
 
     let encode = encodeURIComponent(texto);
-    let url = `https://wa.me/5533999694795?text=${encode}`;
+    let url = `https://wa.me/5533999014256?text=${encode}`;
 
     // ✅ Cria link e simula clique
     let link = document.createElement("a");
@@ -1158,7 +1300,13 @@ carrinho.method = {
       document.body.removeChild(link); // Remove o link após clique
     }, 100); // Atraso mínimo
   },
+
+  // -------------------------------
 };
+
+window.addEventListener("DOMContentLoaded", () => {
+  carrinho.method.carregarCuponsDisponiveis();
+});
 
 carrinho.template = {
   produto: `

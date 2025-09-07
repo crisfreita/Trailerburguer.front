@@ -1,536 +1,589 @@
-
 var pedido = {};
 
-var MODAL_DETALHES = new bootstrap.Modal(document.getElementById('modalDetalhes'));
-var MODAL_RECUSA_PEDIDO = new bootstrap.Modal(document.getElementById('modalRecusarPedido'));
+var MODAL_DETALHES = new bootstrap.Modal(
+  document.getElementById("modalDetalhes")
+);
+var MODAL_RECUSA_PEDIDO = new bootstrap.Modal(
+  document.getElementById("modalRecusarPedido")
+);
 
-var RECUSAR_PEDIDO_ID = 0
-
+var RECUSAR_PEDIDO_ID = 0;
+var enderecoCompleto = "";
 
 pedido.event = {
+  init: () => {
+    app.method.validaToken();
+    app.method.carregarDadosEmpresa();
 
-    init: () => {
+    pedido.method.openTab("pendentes", 1);
 
-        app.method.validaToken();
-        app.method.carregarDadosEmpresa();
-
-        pedido.method.openTab('pendentes', 1);
-
-        setInterval(() => {
-            pedido.method.atualizarLista();
-        }, 10000);
-
-    }
-
-}
+    setInterval(() => {
+      pedido.method.atualizarLista();
+    }, 10000);
+  },
+};
 
 pedido.method = {
+  // método para carregar as tabs
+  openTab: (tab, n) => {
+    Array.from(document.querySelectorAll(".tab-content")).forEach((e) =>
+      e.classList.remove("active")
+    );
 
-    // método para carregar as tabs
-    openTab: (tab, n) => {
+    document.querySelector("#tab-" + tab).classList.add("active");
+    document.querySelector("#lista-pedidos").innerHTML = "";
 
-        Array.from(document.querySelectorAll(".tab-content")).forEach(e => e.classList.remove('active'));
+    app.method.loading(true);
 
-        document.querySelector("#tab-" + tab).classList.add('active');
-        document.querySelector("#lista-pedidos").innerHTML = '';
+    app.method.get(
+      "/pedido/painel/" + n,
+      (response) => {
+        console.log(response);
+        app.method.loading(false);
 
-        app.method.loading(true);
+        if (response.status == "error") {
+          app.method.mensagem(response.message);
+          return;
+        }
 
-        app.method.get('/pedido/painel/' + n,
-            (response) => {
+        pedido.method.carregarPedidos(response.data);
 
-                console.log(response)
-                app.method.loading(false)
+        pedido.method.carregarTotais(response.totais);
+      },
+      (error) => {
+        app.method.loading(false);
+        console.log("error", error);
+      }
+    );
+  },
 
-                if (response.status == "error") {
-                    app.method.mensagem(response.message)
-                    return;
-                }
+  // carrega a lista de pedidos na tela
+  carregarPedidos: (lista) => {
+    const notificationSound = new Audio("./assets/campainha.mp3");
+    notificationSound.volume = 0.2;
 
-                pedido.method.carregarPedidos(response.data);
+    if (lista.length > 0) {
+      lista.forEach((e, i) => {
+        let btnAcoes = "";
+        let titleBtn = "";
+        let acoesPai =
+          '<div class="dropdown-menu" aria-labelledby="menuAcoes">${acoes}</div>';
+        let acoes = "";
+        let acoesFinal = "";
+        let tipoentregaicon = "";
+        let tipoentrega = "";
+        let formapagamentoicon = "";
+        let formapagamento = "";
+        let formapagamentodesc = "";
+        let datahora = "";
 
-                pedido.method.carregarTotais(response.totais);
+        // valida as opções das ações
 
-            },
-            (error) => {
-                app.method.loading(false)
-                console.log('error', error)
-            }
-        );
-
-    },
-
-    // carrega a lista de pedidos na tela
-    carregarPedidos: (lista) => {
-
-        if (lista.length > 0) {
-
-            lista.forEach((e, i) => {
-
-                let btnAcoes = '';
-                let titleBtn = '';
-                let acoesPai = '<div class="dropdown-menu" aria-labelledby="menuAcoes">\${acoes}</div>';
-                let acoes = '';
-                let acoesFinal = '';
-                let tipoentregaicon = '';
-                let tipoentrega = '';
-                let formapagamentoicon = '';
-                let formapagamento = '';
-                let formapagamentodesc = '';
-                let datahora = '';
-
-                // valida as opções das ações
-
-                if (e.idpedidostatus == 1) {
-                    titleBtn = 'Pendente';
-                    acoes = `
+        if (e.idpedidostatus == 1) {
+          notificationSound.play();
+          titleBtn = "Pendente";
+          acoes = `
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(2, '${e.idpedido}')">Mover para <b>Aceito</b> <i class="far fa-thumbs-up"></i></a>
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(3, '${e.idpedido}')">Mover para <b>Em preparo</b> <i class="far fa-clock"></i></a>
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(4, '${e.idpedido}')">Mover para <b>Em entrega</b> <i class="fas fa-motorcycle"></i></a>
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(5, '${e.idpedido}')">Mover para <b>Concluído</b> <i class="far fa-check-circle"></i></a>
-                        <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(6, '${e.idpedido}')">Recusar Pedido <i class="far fa-times-circle"></i></a>`
-                }
-                else if (e.idpedidostatus == 2) {
-                    titleBtn = 'Aceito';
-                    acoes = `
+                        <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(6, '${e.idpedido}')">Recusar Pedido <i class="far fa-times-circle"></i></a>`;
+        } else if (e.idpedidostatus == 2) {
+          titleBtn = "Aceito";
+          acoes = `
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(3, '${e.idpedido}')">Mover para <b>Em preparo</b> <i class="far fa-clock"></i></a>
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(4, '${e.idpedido}')">Mover para <b>Em entrega</b> <i class="fas fa-motorcycle"></i></a>
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(5, '${e.idpedido}')">Mover para <b>Concluído</b> <i class="far fa-check-circle"></i></a>
-                        <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(6, '${e.idpedido}')">Recusar Pedido <i class="far fa-times-circle"></i></a>`
-                }
-                else if (e.idpedidostatus == 3) {
-                    titleBtn = 'Em preparo';
-                    acoes = `
+                        <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(6, '${e.idpedido}')">Recusar Pedido <i class="far fa-times-circle"></i></a>`;
+        } else if (e.idpedidostatus == 3) {
+          titleBtn = "Em preparo";
+          acoes = `
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(4, '${e.idpedido}')">Mover para <b>Em entrega</b> <i class="fas fa-motorcycle"></i></a>
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(5, '${e.idpedido}')">Mover para <b>Concluído</b> <i class="far fa-check-circle"></i></a>
-                        <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(6, '${e.idpedido}')">Recusar Pedido <i class="far fa-times-circle"></i></a>`
-                }
-                else if (e.idpedidostatus == 4) {
-                    titleBtn = 'Em entrega';
-                    acoes = `
+                        <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(6, '${e.idpedido}')">Recusar Pedido <i class="far fa-times-circle"></i></a>`;
+        } else if (e.idpedidostatus == 4) {
+          titleBtn = "Em entrega";
+          acoes = `
                         <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(5, '${e.idpedido}')">Mover para <b>Concluído</b> <i class="far fa-check-circle"></i></a>
-                        <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(6, '${e.idpedido}')">Recusar Pedido <i class="far fa-times-circle"></i></a>`
-                }
+                        <a class="dropdown-item" href="#!" onclick="pedido.method.moverPara(6, '${e.idpedido}')">Recusar Pedido <i class="far fa-times-circle"></i></a>`;
+        }
 
-                // se for diferente de concluido e recusado, adiciona as ações
-                if (e.idpedidostatus != 5 && e.idpedidostatus != 6) {
-                    acoesFinal = acoesPai.replace(/\${acoes}/g, acoes);
-                    btnAcoes = `
+        // se for diferente de concluido e recusado, adiciona as ações
+        if (e.idpedidostatus != 5 && e.idpedidostatus != 6) {
+          acoesFinal = acoesPai.replace(/\${acoes}/g, acoes);
+          btnAcoes = `
                         <button class="btn btn-white btn-sm dropdown-toggle active" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="menuAcoes">
                             ${titleBtn}
                         </button>
                     `;
-                }
-
-
-                // valida o tipo de entrega
-                if (e.idtipoentrega == 1) {
-                    tipoentregaicon = 'fas fa-motorcycle';
-                    tipoentrega = 'Delivery';
-                }
-                else {
-                    tipoentregaicon = 'fas fa-box';
-                    tipoentrega = 'Retirada';
-                }
-
-
-                // valida a forma de pagamento
-                if (e.idformapagamento == 1) {
-                    formapagamentoicon = 'fas fa-receipt';
-                    formapagamento = 'Pix';
-                    formapagamentodesc = 'Pagamento na entrega do pedido';
-                }
-                else if (e.idformapagamento == 2) {
-                    formapagamentoicon = 'fas fa-coins';
-                    formapagamento = 'Dinheiro';
-                    formapagamentodesc = e.troco != null ? `Troco para ${(e.troco).toFixed(2).replace('.', ',')} reais` : 'Pagamento na entrega do pedido';
-                }
-                else if (e.idformapagamento == 3) {
-                    formapagamentoicon = 'fas fa-credit-card';
-                    formapagamento = 'Cartão de Crédito';
-                    formapagamentodesc = e.idtipoentrega == 1 ? 'Levar maquininha de cartão' : 'Pagamento na retirada do pedido';
-                }
-                else if (e.idformapagamento == 4) {
-                    formapagamentoicon = 'fas fa-credit-card';
-                    formapagamento = 'Cartão de Débito';
-                    formapagamentodesc = e.idtipoentrega == 1 ? 'Levar maquininha de cartão' : 'Pagamento na retirada do pedido';
-                }
-
-
-                // formata a data e hora de recebimento
-                let datacadastro = e.datacadastro.split('T');
-                let dataFormatada = datacadastro[0].split('-')[2] + '/' + datacadastro[0].split('-')[1];
-                let horarioFormatado = datacadastro[1].split(':')[0] + ':' + datacadastro[1].split(':')[1];
-
-                datahora = `${dataFormatada} às ${horarioFormatado}`;
-
-                let temp = pedido.template.card.replace(/\${idpedido}/g, e.idpedido)
-                    .replace(/\${btnAcoes}/g, btnAcoes)
-                    .replace(/\${acoes}/g, acoesFinal)
-                    .replace(/\${nome}/g, e.nomecliente)
-                    .replace(/\${tipoentregaicon}/g, tipoentregaicon)
-                    .replace(/\${tipoentrega}/g, tipoentrega)
-                    .replace(/\${formapagamentoicon}/g, formapagamentoicon)
-                    .replace(/\${formapagamento}/g, formapagamento)
-                    .replace(/\${formapagamentodesc}/g, formapagamentodesc)
-                    .replace(/\${datahora}/g, datahora)
-                    .replace(/\${total}/g, (e.total).toFixed(2).replace('.', ','));
-
-                // adicona o pedido na tela
-                document.querySelector("#lista-pedidos").innerHTML += temp;
-
-            })
-
         }
 
-    },
-
-    // carrega os totais nas tabs
-    carregarTotais: (data) => {
-
-        // primeiro, oculta todos os totais
-        document.querySelector("#badge-total-pendentes").classList.add('hidden');
-        document.querySelector("#badge-total-aceito").classList.add('hidden');
-        document.querySelector("#badge-total-preparo").classList.add('hidden');
-        document.querySelector("#badge-total-entrega").classList.add('hidden');
-
-        if (data.pendente > 0) {
-            document.querySelector("#badge-total-pendentes").classList.remove('hidden');
-            document.querySelector("#badge-total-pendentes").innerText = data.pendente;
+        // valida o tipo de entrega
+        if (e.idtipoentrega == 1) {
+          tipoentregaicon = "fas fa-motorcycle";
+          tipoentrega = "Delivery";
+        } else {
+          tipoentregaicon = "fas fa-box";
+          tipoentrega = "Retirada";
         }
 
-        if (data.aceito > 0) {
-            document.querySelector("#badge-total-aceito").classList.remove('hidden');
-            document.querySelector("#badge-total-aceito").innerText = data.aceito;
+        // valida a forma de pagamento
+        if (e.idformapagamento == 1) {
+          formapagamentoicon = "fas fa-receipt";
+          formapagamento = "Pix";
+          formapagamentodesc = "Pagamento na entrega do pedido";
+        } else if (e.idformapagamento == 2) {
+          formapagamentoicon = "fas fa-coins";
+          formapagamento = "Dinheiro";
+          formapagamentodesc =
+            e.troco != null
+              ? `Troco para ${e.troco.toFixed(2).replace(".", ",")} reais`
+              : "Pagamento na entrega do pedido";
+        } else if (e.idformapagamento == 3) {
+          formapagamentoicon = "fas fa-credit-card";
+          formapagamento = "Cartão de Crédito";
+          formapagamentodesc =
+            e.idtipoentrega == 1
+              ? "Levar maquininha de cartão"
+              : "Pagamento na retirada do pedido";
+        } else if (e.idformapagamento == 4) {
+          formapagamentoicon = "fas fa-credit-card";
+          formapagamento = "Cartão de Débito";
+          formapagamentodesc =
+            e.idtipoentrega == 1
+              ? "Levar maquininha de cartão"
+              : "Pagamento na retirada do pedido";
         }
 
-        if (data.preparo > 0) {
-            document.querySelector("#badge-total-preparo").classList.remove('hidden');
-            document.querySelector("#badge-total-preparo").innerText = data.preparo;
+        // formata a data e hora de recebimento
+        let datacadastro = e.datacadastro.split("T");
+        let dataFormatada =
+          datacadastro[0].split("-")[2] + "/" + datacadastro[0].split("-")[1];
+        let horarioFormatado =
+          datacadastro[1].split(":")[0] + ":" + datacadastro[1].split(":")[1];
+
+        datahora = `${dataFormatada} às ${horarioFormatado}`;
+
+        let temp = pedido.template.card
+          .replace(/\${idpedido}/g, e.idpedido)
+          .replace(/\${btnAcoes}/g, btnAcoes)
+          .replace(/\${acoes}/g, acoesFinal)
+          .replace(/\${nome}/g, e.nomecliente)
+          .replace(/\${tipoentregaicon}/g, tipoentregaicon)
+          .replace(/\${tipoentrega}/g, tipoentrega)
+          .replace(/\${formapagamentoicon}/g, formapagamentoicon)
+          .replace(/\${formapagamento}/g, formapagamento)
+          .replace(/\${formapagamentodesc}/g, formapagamentodesc)
+          .replace(/\${datahora}/g, datahora)
+          .replace(/\${total}/g, e.total.toFixed(2).replace(".", ","));
+
+        // adicona o pedido na tela
+        document.querySelector("#lista-pedidos").innerHTML += temp;
+      });
+    }
+  },
+
+  // carrega os totais nas tabs
+  carregarTotais: (data) => {
+    // primeiro, oculta todos os totais
+    document.querySelector("#badge-total-pendentes").classList.add("hidden");
+    document.querySelector("#badge-total-aceito").classList.add("hidden");
+    document.querySelector("#badge-total-preparo").classList.add("hidden");
+    document.querySelector("#badge-total-entrega").classList.add("hidden");
+
+    if (data.pendente > 0) {
+      document
+        .querySelector("#badge-total-pendentes")
+        .classList.remove("hidden");
+      document.querySelector("#badge-total-pendentes").innerText =
+        data.pendente;
+    }
+
+    if (data.aceito > 0) {
+      document.querySelector("#badge-total-aceito").classList.remove("hidden");
+      document.querySelector("#badge-total-aceito").innerText = data.aceito;
+    }
+
+    if (data.preparo > 0) {
+      document.querySelector("#badge-total-preparo").classList.remove("hidden");
+      document.querySelector("#badge-total-preparo").innerText = data.preparo;
+    }
+
+    if (data.entrega > 0) {
+      document.querySelector("#badge-total-entrega").classList.remove("hidden");
+      document.querySelector("#badge-total-entrega").innerText = data.entrega;
+    }
+  },
+
+  // abre a modal de detalhes do pedido
+  abrirModalDetalhes: (idpedido) => {
+    MODAL_DETALHES.show();
+
+    app.method.loading(true);
+
+    app.method.get(
+      "/pedido/" + idpedido,
+      (response) => {
+        console.log(response);
+        app.method.loading(false);
+
+        if (response.status == "error") {
+          app.method.mensagem(response.message);
+          return;
         }
 
-        if (data.entrega > 0) {
-            document.querySelector("#badge-total-entrega").classList.remove('hidden');
-            document.querySelector("#badge-total-entrega").innerText = data.entrega;
-        }
-
-    },
-
-    // abre a modal de detalhes do pedido
-    abrirModalDetalhes: (idpedido) => {
-
-        MODAL_DETALHES.show();
-
-        app.method.loading(true);
-
-        app.method.get('/pedido/' + idpedido,
-            (response) => {
-
-                console.log(response)
-                app.method.loading(false)
-
-                if (response.status == "error") {
-                    app.method.mensagem(response.message)
-                    return;
-                }
-
-                pedido.method.carregarModalDetalhes(response.data, idpedido, response.cart);
-
-            },
-            (error) => {
-                app.method.loading(false)
-                console.log('error', error)
-            }
+        pedido.method.carregarModalDetalhes(
+          response.data,
+          idpedido,
+          response.cart
         );
+      },
+      (error) => {
+        app.method.loading(false);
+        console.log("error", error);
+      }
+    );
+  },
 
-    },
+  // carrega os dados da modal de detalhes
+  carregarModalDetalhes: (data, idpedido, cart) => {
+    let datacadastro = data.datacadastro.split("T");
+    let dataFormatada =
+      datacadastro[0].split("-")[2] + "/" + datacadastro[0].split("-")[1];
+    let horarioFormatado =
+      datacadastro[1].split(":")[0] + ":" + datacadastro[1].split(":")[1];
 
-    // carrega os dados da modal de detalhes
-    carregarModalDetalhes: (data, idpedido, cart) => {
+    document.querySelector(
+      "#lblDataHora"
+    ).innerText = `Recebido em ${dataFormatada} às ${horarioFormatado}`;
 
-        let datacadastro = data.datacadastro.split('T');
-        let dataFormatada = datacadastro[0].split('-')[2] + '/' + datacadastro[0].split('-')[1];
-        let horarioFormatado = datacadastro[1].split(':')[0] + ':' + datacadastro[1].split(':')[1];
+    document.querySelector("#lblNomeCliente").innerText = data.nomecliente;
+    document.querySelector("#lblTelefoneCliente").innerText =
+      data.telefonecliente;
 
-        document.querySelector('#lblDataHora').innerText = `Recebido em ${dataFormatada} às ${horarioFormatado}`;
+    document.querySelector("#lblTipoEntrega").innerHTML =
+      data.idtipoentrega == 1
+        ? '<i class="fas fa-motorcycle"></i> Entrega'
+        : '<i class="fas fa-box"></i> Retirada';
 
-        document.querySelector('#lblNomeCliente').innerText = data.nomecliente;
-        document.querySelector('#lblTelefoneCliente').innerText = data.telefonecliente;
+    document.querySelector("#lblFormaPagamentoTitulo").innerText =
+      data.formapagamento;
+    document.querySelector("#lblFormaPagamentoDescricao").innerText =
+      "Pagamento na entrega do pedido";
 
-        document.querySelector('#lblTipoEntrega').innerHTML = data.idtipoentrega == 1 ? '<i class="fas fa-motorcycle"></i> Entrega' : '<i class="fas fa-box"></i> Retirada';
+    if (data.idformapagamento == 1) {
+      document.querySelector("#lblFormaPagamentoIcon").innerHTML =
+        '<i class="fas fa-receipt"></i>';
+    } else if (data.idformapagamento == 2) {
+      document.querySelector("#lblFormaPagamentoIcon").innerHTML =
+        '<i class="fas fa-coins"></i>';
+      document.querySelector("#lblFormaPagamentoDescricao").innerHTML =
+        data.troco != null
+          ? `Troco para ${data.troco.toFixed(2).replace(".", ",")} reais`
+          : "Pagamento na entrega do pedido";
+    } else {
+      document.querySelector("#lblFormaPagamentoIcon").innerHTML =
+        '<i class="fas fa-credit-card"></i>';
+      document.querySelector("#lblFormaPagamentoDescricao").innerHTML =
+        data.idtipoentrega == 1
+          ? "Levar maquininha de cartão"
+          : "Pagamento na retirada do pedido";
+    }
 
-        document.querySelector('#lblFormaPagamentoTitulo').innerText = data.formapagamento;
-        document.querySelector('#lblFormaPagamentoDescricao').innerText = 'Pagamento na entrega do pedido';
+    if (data.idtipoentrega == 1) {
+      document.querySelector("#container-endereco").classList.remove("hidden");
+      document.querySelector("#lblEndereco").innerText = `${data.endereco}, ${
+        data.numero
+      }, ${data.bairro} ${data.complemento ? ` - ${data.complemento}` : ""}`;
+      document.querySelector(
+        "#lblCep"
+      ).innerText = `${data.cidade}-${data.estado} / ${data.cep}`;
+    } else {
+      document.querySelector("#container-endereco").classList.add("hidden");
+    }
+    // pedido.method.imprimirPedidoDaModal()
+    // carrega o botão de Imprimir
+    document.querySelector("#container-action-footer").innerHTML =
+      '<button onclick="window.print()" type="button" class="btn btn-white btn-sm">Imprimir</button>';
 
-        if (data.idformapagamento == 1) {
-            document.querySelector('#lblFormaPagamentoIcon').innerHTML = '<i class="fas fa-receipt"></i>';
+    // carrega o botão final na modal (somente se for diferente de concluido ou recusado)
+    if (data.idpedidostatus != 5 && data.idpedidostatus != 6) {
+      if (data.idpedidostatus == 1) {
+        document.querySelector(
+          "#container-action-footer"
+        ).innerHTML += `<button onclick="pedido.method.moverPara(2, '${idpedido}')" type="button" class="btn btn-yellow btn-sm">Aceitar Pedido</button>`;
+      }
+      if (data.idpedidostatus == 2) {
+        document.querySelector(
+          "#container-action-footer"
+        ).innerHTML += `<button onclick="pedido.method.moverPara(3, '${idpedido}')" type="button" class="btn btn-yellow btn-sm">Preparar Pedido</button>`;
+      }
+      if (data.idpedidostatus == 3) {
+        document.querySelector(
+          "#container-action-footer"
+        ).innerHTML += `<button onclick="pedido.method.moverPara(4, '${idpedido}')" type="button" class="btn btn-yellow btn-sm">Entregar Pedido</button>`;
+      }
+      if (data.idpedidostatus == 4) {
+        document.querySelector(
+          "#container-action-footer"
+        ).innerHTML += `<button onclick="pedido.method.moverPara(5, '${idpedido}')" type="button" class="btn btn-yellow btn-sm">Concluir Pedido</button>`;
+      }
+    } else {
+      document.querySelector("#container-action-footer").innerHTML = "";
+    }
+
+    document.querySelector("#itensPedido").innerHTML = "";
+
+    // organiza o carrinho em grupo
+    var itens_pedido = cart.reduce(function (results, item) {
+      (results[item.idpedidoitem] = results[item.idpedidoitem] || []).push(
+        item
+      );
+      return results;
+    }, {});
+
+    console.log("itens_pedido", itens_pedido);
+
+    var order = [];
+
+    for (var key in itens_pedido) {
+      var obj = itens_pedido[key];
+
+      // cria o objeto principal do item
+      var _item = {
+        idpedidoitem: obj[0].idpedidoitem,
+        nome: obj[0].nome,
+        observacao: obj[0].observacao,
+        quantidade: obj[0].quantidade,
+        valor: obj[0].valor,
+        opcionais: [],
+      };
+
+      enderecoCompleto = {
+        endereco: data.endereco,
+        numero: data.numero,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
+      };
+
+      obj.forEach((e, i) => {
+        // monta a lista de opcionais
+        if (e.idopcionalitem != null) {
+          var _opc = {
+            idopcionalitem: e.idopcionalitem,
+            nomeopcional: e.nomeopcional,
+            valoropcional: e.valoropcional,
+          };
+
+          // adiciona o opcional na lista
+          _item.opcionais.push(_opc);
         }
-        else if (data.idformapagamento == 2) {
-            document.querySelector('#lblFormaPagamentoIcon').innerHTML = '<i class="fas fa-coins"></i>';
-            document.querySelector('#lblFormaPagamentoDescricao').innerHTML = data.troco != null ? `Troco para ${(data.troco).toFixed(2).replace('.', ',')} reais` : 'Pagamento na entrega do pedido';
-        }
-        else {
-            document.querySelector('#lblFormaPagamentoIcon').innerHTML = '<i class="fas fa-credit-card"></i>';
-            document.querySelector('#lblFormaPagamentoDescricao').innerHTML = data.idtipoentrega == 1 ? 'Levar maquininha de cartão' : 'Pagamento na retirada do pedido';
-        }
+      });
 
+      // adiciona o item no objeto de order
+      order.push(_item);
+    }
 
-        if (data.idtipoentrega == 1) {
-            document.querySelector('#container-endereco').classList.remove('hidden');
-            document.querySelector('#lblEndereco').innerText = `${data.endereco}, ${data.numero}, ${data.bairro} ${data.complemento ? ` - ${data.complemento}` : ''}`;
-            document.querySelector('#lblCep').innerText = `${data.cidade}-${data.estado} / ${data.cep}`;
-        }   
-        else {
-            document.querySelector('#container-endereco').classList.add('hidden');
-        }
+    console.log("order", order);
 
-        // carrega o botão de Imprimir
-        document.querySelector('#container-action-footer').innerHTML = '<button onclick="pedido.method.imprimir()" type="button" class="btn btn-white btn-sm">Imprimir</button>';
+    order.forEach((e, i) => {
+      let itens = "";
 
-        // carrega o botão final na modal (somente se for diferente de concluido ou recusado)
-        if (data.idpedidostatus != 5 && data.idpedidostatus != 6) {
+      if (e.opcionais.length > 0) {
+        // monta a lista de opcionais
+        for (let index = 0; index < e.opcionais.length; index++) {
+          let element = e.opcionais[index];
 
-            if (data.idpedidostatus == 1) {
-                document.querySelector('#container-action-footer').innerHTML += `<button onclick="pedido.method.moverPara(2, '${idpedido}')" type="button" class="btn btn-yellow btn-sm">Aceitar Pedido</button>`
-            }
-            if (data.idpedidostatus == 2) {
-                document.querySelector('#container-action-footer').innerHTML += `<button onclick="pedido.method.moverPara(3, '${idpedido}')" type="button" class="btn btn-yellow btn-sm">Preparar Pedido</button>`
-            }
-            if (data.idpedidostatus == 3) {
-                document.querySelector('#container-action-footer').innerHTML += `<button onclick="pedido.method.moverPara(4, '${idpedido}')" type="button" class="btn btn-yellow btn-sm">Entregar Pedido</button>`
-            }
-            if (data.idpedidostatus == 4) {
-                document.querySelector('#container-action-footer').innerHTML += `<button onclick="pedido.method.moverPara(5, '${idpedido}')" type="button" class="btn btn-yellow btn-sm">Concluir Pedido</button>`
-            }
-
-        }
-        else {
-            document.querySelector('#container-action-footer').innerHTML = '';
-        }
-
-        document.querySelector('#itensPedido').innerHTML = '';
-
-        // organiza o carrinho em grupo
-        var itens_pedido = cart.reduce(function (results, item) {
-            (results[item.idpedidoitem] = results[item.idpedidoitem] || []).push(item)
-            return results;
-        }, {})
-
-        console.log('itens_pedido', itens_pedido)
-
-        var order = [];
-
-        for (var key in itens_pedido) {
-
-            var obj = itens_pedido[key];
-        
-            // cria o objeto principal do item
-            var _item = {
-                idpedidoitem: obj[0].idpedidoitem,
-                nome: obj[0].nome,
-                observacao: obj[0].observacao,
-                quantidade: obj[0].quantidade,
-                valor: obj[0].valor,
-                opcionais: []
-            }
-
-            obj.forEach((e, i) => {
-
-                // monta a lista de opcionais
-                if (e.idopcionalitem != null) {
-
-                    var _opc = {
-                        idopcionalitem: e.idopcionalitem,
-                        nomeopcional: e.nomeopcional,
-                        valoropcional: e.valoropcional
-                    }
-
-                    // adiciona o opcional na lista
-                    _item.opcionais.push(_opc)
-
-                }
-
-            })
-
-            // adiciona o item no objeto de order
-            order.push(_item);
-        
-        }
-
-        console.log('order', order);
-
-        order.forEach((e, i) => {
-
-            let itens = '';
-
-            if (e.opcionais.length > 0) {
-                // monta a lista de opcionais
-                for (let index = 0; index < e.opcionais.length; index++) {
-                    let element = e.opcionais[index];
-                    
-                    itens += pedido.template.opcional.replace(/\${nome}/g, `${e.quantidade}x ${element.nomeopcional}`)
-                        .replace(/\${preco}/g, `+ R$ ${(e.quantidade * element.valoropcional).toFixed(2).replace('.', ',')}`)
-
-                }
-            }
-
-            let obs = '';
-
-            if (e.observacao != null && e.observacao.length > 0) {
-                obs = pedido.template.obs.replace(/\${observacao}/g, e.observacao);
-            }
-
-            let temp = pedido.template.produto.replace(/\${guid}/g, e.guid)
-                    .replace(/\${nome}/g, `${e.quantidade}x ${e.nome}`)
-                    .replace(/\${preco}/g, `R$ ${(e.quantidade * e.valor).toFixed(2).replace('.', ',')}`)
-                    .replace(/\${obs}/g, obs)
-                    .replace(/\${opcionais}/g, itens)
-
-            document.querySelector('#itensPedido').innerHTML += temp;
-
-        });
-
-        // valida se tem taxa
-        if (data.taxaentrega > 0) {
-            let temptaxa = pedido.template.taxaentrega.replace(/\${total}/g, `+ R$ ${(data.taxaentrega).toFixed(2).replace('.', ',')}`)
-            document.querySelector('#itensPedido').innerHTML += temptaxa;
-        }
-
-        let temptotal = pedido.template.total.replace(/\${total}/g, `R$ ${(data.total).toFixed(2).replace('.', ',')}`)
-        document.querySelector('#itensPedido').innerHTML += temptotal;
-
-    },
-
-    // move o pedido para outra tab
-    moverPara: (target, idpedido) => {
-
-        RECUSAR_PEDIDO_ID = 0;
-
-        // se for recusar, abre a modal de confirmação
-        if (parseInt(target) == 6) {
-            RECUSAR_PEDIDO_ID = idpedido;
-            document.querySelector('#txtMotivoRecusa').value = '';
-            MODAL_RECUSA_PEDIDO.show();
-            return;
-        }
-
-        var dados = {
-            tab: target,
-            idpedido: idpedido
-        }
-
-        app.method.loading(true);
-
-        app.method.post('/pedido/mover', JSON.stringify(dados),
-            (response) => {
-
-                console.log('response', response)
-                app.method.loading(false);
-
-                if (response.status === 'error') {
-                    app.method.mensagem(response.message)
-                    return;
-                }
-
-                app.method.mensagem(response.message, 'green');
-
-                pedido.method.atualizarLista();
-
-                MODAL_DETALHES.hide();
-
-            },
-            (error) => {
-                console.log('error', error);
-                app.method.loading(false);
-            }
-        );
-
-    },
-
-    // método chamado para atualizar a lista de pedidos de acordo com a TAB selecionada
-    atualizarLista: () => {
-
-        // valida qual é o target, pra carregar os itens da tab atual
-        let tabAtiva = document.querySelector('.tab-content.active').id;
-
-        if (tabAtiva == 'tab-pendentes') {
-            pedido.method.openTab('pendentes', 1);
-        }
-        else if (tabAtiva == 'tab-aceito') {
-            pedido.method.openTab('aceito', 2);
-        }
-        else if (tabAtiva == 'tab-preparo') {
-            pedido.method.openTab('preparo', 3);
-        }
-        else if (tabAtiva == 'tab-entrega') {
-            pedido.method.openTab('entrega', 4);
-        }
-
-    },
-
-    // recusa o pedido
-    recusarPedido: () => {
-
-        if (RECUSAR_PEDIDO_ID != 0) {
-
-            let motivo = document.querySelector('#txtMotivoRecusa').value.trim();
-
-            var dados = {
-                idpedido: RECUSAR_PEDIDO_ID,
-                motivo: motivo
-            }
-
-            app.method.loading(true);
-
-            app.method.post('/pedido/recusar', JSON.stringify(dados),
-                (response) => {
-    
-                    console.log('response', response)
-                    app.method.loading(false);
-    
-                    if (response.status === 'error') {
-                        app.method.mensagem(response.message)
-                        return;
-                    }
-    
-                    app.method.mensagem(response.message, 'green');
-    
-                    pedido.method.atualizarLista();
-    
-                    MODAL_RECUSA_PEDIDO.hide();
-    
-                },
-                (error) => {
-                    console.log('error', error);
-                    app.method.loading(false);
-                }
+          itens += pedido.template.opcional
+            .replace(/\${nome}/g, `${e.quantidade}x ${element.nomeopcional}`)
+            .replace(
+              /\${preco}/g,
+              `+ R$ ${(e.quantidade * element.valoropcional)
+                .toFixed(2)
+                .replace(".", ",")}`
             );
+        }
+      }
 
+      let obs = "";
+
+      if (e.observacao != null && e.observacao.length > 0) {
+        obs = pedido.template.obs.replace(/\${observacao}/g, e.observacao);
+      }
+
+      let temp = pedido.template.produto
+        .replace(/\${guid}/g, e.guid)
+        .replace(/\${nome}/g, `${e.quantidade}x ${e.nome}`)
+        .replace(
+          /\${preco}/g,
+          `R$ ${(e.quantidade * e.valor).toFixed(2).replace(".", ",")}`
+        )
+        .replace(/\${obs}/g, obs)
+        .replace(/\${opcionais}/g, itens);
+
+      document.querySelector("#itensPedido").innerHTML += temp;
+    });
+
+    // valida se tem taxa
+    if (data.taxaentrega > 0) {
+      let temptaxa = pedido.template.taxaentrega.replace(
+        /\${total}/g,
+        `+ R$ ${data.taxaentrega.toFixed(2).replace(".", ",")}`
+      );
+      document.querySelector("#itensPedido").innerHTML += temptaxa;
+    }
+
+    let temptotal = pedido.template.total.replace(
+      /\${total}/g,
+      `R$ ${data.total.toFixed(2).replace(".", ",")}`
+    );
+    document.querySelector("#itensPedido").innerHTML += temptotal;
+
+    // Imprime automaticamente apenas se o pedido estiver "pendente"
+    // if (data.idpedidostatus == 1) {
+    //      setTimeout(() => {
+    //        window.print();
+    //     }, 300);
+    //  }
+  },
+
+  // move o pedido para outra tab
+  moverPara: (target, idpedido) => {
+    RECUSAR_PEDIDO_ID = 0;
+
+    // se for recusar, abre a modal de confirmação
+    if (parseInt(target) == 6) {
+      RECUSAR_PEDIDO_ID = idpedido;
+      document.querySelector("#txtMotivoRecusa").value = "";
+      MODAL_RECUSA_PEDIDO.show();
+      return;
+    }
+
+    var dados = {
+      tab: target,
+      idpedido: idpedido,
+    };
+
+    app.method.loading(true);
+
+    app.method.post(
+      "/pedido/mover",
+      JSON.stringify(dados),
+      (response) => {
+        console.log("response", response);
+        app.method.loading(false);
+
+        if (response.status === "error") {
+          app.method.mensagem(response.message);
+          return;
         }
 
-    },
+        app.method.mensagem(response.message, "green");
 
-    // imprimir o pedido
-    imprimir: () => {
+        pedido.method.atualizarLista();
 
-        // mostra o loader
-        app.method.loading(true);
+        MODAL_DETALHES.hide();
+      },
+      (error) => {
+        console.log("error", error);
+        app.method.loading(false);
+      }
+    );
+  },
 
-        // Coloca a classe de print
-        $("#content-print").addClass('print');
+  // método chamado para atualizar a lista de pedidos de acordo com a TAB selecionada
+  atualizarLista: () => {
+    // valida qual é o target, pra carregar os itens da tab atual
+    let tabAtiva = document.querySelector(".tab-content.active").id;
 
-        // Obtém o elemento a ser impresso
-        const div = document.getElementById('content-print');
-        
-        html2canvas(div).then(function (canvas) {
-            
-            // remove a classe de print
-            $("#content-print").removeClass('print');
+    if (tabAtiva == "tab-pendentes") {
+      pedido.method.openTab("pendentes", 1);
+    } else if (tabAtiva == "tab-aceito") {
+      pedido.method.openTab("aceito", 2);
+    } else if (tabAtiva == "tab-preparo") {
+      pedido.method.openTab("preparo", 3);
+    } else if (tabAtiva == "tab-entrega") {
+      pedido.method.openTab("entrega", 4);
+    }
+  },
 
-            // Criar um novo elemento <img> com o conteúdo do canvas
-            const imagem = canvas.toDataURL(); // Obter a URL da imagem
-            const novaJanela = window.open('', '_blank'); // Abrir uma nova janela
-            novaJanela.document.write(`
+  // recusa o pedido
+  recusarPedido: () => {
+    if (RECUSAR_PEDIDO_ID != 0) {
+      let motivo = document.querySelector("#txtMotivoRecusa").value.trim();
+
+      var dados = {
+        idpedido: RECUSAR_PEDIDO_ID,
+        motivo: motivo,
+      };
+
+      app.method.loading(true);
+
+      app.method.post(
+        "/pedido/recusar",
+        JSON.stringify(dados),
+        (response) => {
+          console.log("response", response);
+          app.method.loading(false);
+
+          if (response.status === "error") {
+            app.method.mensagem(response.message);
+            return;
+          }
+
+          app.method.mensagem(response.message, "green");
+
+          pedido.method.atualizarLista();
+
+          MODAL_RECUSA_PEDIDO.hide();
+        },
+        (error) => {
+          console.log("error", error);
+          app.method.loading(false);
+        }
+      );
+    }
+  },
+
+  // painel pedidos.js nova função
+  openGoogleMaps: () => {
+    let endereco = enderecoCompleto;
+    let enderecoGoogle = `${endereco.endereco} ${endereco.numero}, ${endereco.bairro}, ${endereco.cidade}-${endereco.estado}`;
+
+    // Verifique o endereço
+    console.log("Endereço gerado:", enderecoGoogle);
+
+    let url = `https://www.google.com/maps/place/${encodeURIComponent(
+      enderecoGoogle
+    )}`;
+
+    // Verifique a URL final
+    console.log("URL gerada:", url);
+
+    window.open(url, "_blank");
+  },
+
+  // imprimir o pedido
+  imprimir: () => {
+    //  mostra o loader
+    app.method.loading(true);
+
+    //   Coloca a classe de print
+    $("#content-print").addClass("print");
+
+    // Obtém o elemento a ser impresso
+    const div = document.getElementById("content-print");
+
+    html2canvas(div)
+      .then(function (canvas) {
+        // remove a classe de print
+        $("#content-print").removeClass("print");
+
+        // Criar um novo elemento <img> com o conteúdo do canvas
+        const imagem = canvas.toDataURL(); // Obter a URL da imagem
+        const novaJanela = window.open("", "_blank"); // Abrir uma nova janela
+        novaJanela.document.write(`
                 <html>
                     <head>
                         <title>Impressão</title>
@@ -538,34 +591,159 @@ pedido.method = {
                     <body style="margin: 0; padding: 0; text-align: center;">
                         <img src="${imagem}" style="max-width: 100%; height: auto;"/> 
                     </body>
-                </html>
+             </html>
             `);
 
-            // Aguarde o carregamento completo da nova janela e acione a impressão
-            novaJanela.document.close(); // Fecha o fluxo de escrita
+        // Aguarde o carregamento completo da nova janela e acione a impressão
+        novaJanela.document.close(); // Fecha o fluxo de escrita
 
-            // remove o loader
-            app.method.loading(false);
+        // remove o loader
+        app.method.loading(false);
 
-            setTimeout(function() {
-                novaJanela.focus(); // Garante que a janela está ativa
-                novaJanela.print(); // Abre a tela de impressão
-                setTimeout(function() {
-                    novaJanela.close(); // Fecha a tela depois de cancelar ou imprimir
-                }, 100)
-            }, 100); // Delay para o conteudo de impressão carregar
+        setTimeout(function () {
+          novaJanela.focus(); // Garante que a janela está ativa
+          novaJanela.print(); // Abre a tela de impressão
+          setTimeout(function () {
+            novaJanela.close(); // Fecha a tela depois de cancelar ou imprimir
+          }, 100);
+        }, 100); // Delay para o conteudo de impressão carregar
+      })
+      .catch(function (error) {
+        console.error("Erro ao capturar a div:", error);
+      });
+  },
 
-        }).catch(function (error) {
-            console.error('Erro ao capturar a div:', error);
-        });
+  imprimirPedidoDaModal: () => {
+    const nomeCliente = document.querySelector("#lblNomeCliente").innerText;
+    const telefoneCliente = document.querySelector(
+      "#lblTelefoneCliente"
+    ).innerText;
+    const dataHora = document.querySelector("#lblDataHora").innerText;
+    const tipoEntrega = document.querySelector("#lblTipoEntrega").innerText;
+    const endereco = document.querySelector("#lblEndereco")?.innerText || "";
+    const cep = document.querySelector("#lblCep")?.innerText || "";
+    const pagamento = document.querySelector(
+      "#lblFormaPagamentoTitulo"
+    ).innerText;
+    const descricaoPagamento = document.querySelector(
+      "#lblFormaPagamentoDescricao"
+    ).innerText;
+    const itens = document.querySelector("#itensPedido").innerHTML;
 
-    },
+    const html = `
+<html>
+  <head>
+    <style>
+      @media print {
+        @page {
+          size: 80mm auto;
+          margin: 0;
+        }
+      }
 
+      body {
+        width: 100%;
+        font-family: 'Arial', sans-serif;
+        font-size: 13px;
+        margin: 0;
+        padding: 5px;
+      }
+
+      h2 {
+        text-align: center;
+        font-size: 18px;
+        margin: 5px 0;
+      }
+
+      .center {
+        text-align: center;
+      }
+
+      .titulo {
+        font-weight: bold;
+        font-size: 15px;
+        margin: 10px 0 5px 0;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      p {
+        margin: 3px 0;
+      }
+
+      strong {
+        font-weight: bold;
+      }
+
+      .hr {
+        border-top: 1px dashed #000;
+        margin: 6px 0;
+      }
+
+      .item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 5px;
 }
 
-pedido.template = {
+.item .qtd {
+  min-width: 25px;
+}
 
-    card: `
+.item .nome {
+  flex: 1;
+  word-break: break-word;
+}
+
+.item .total {
+  min-width: 60px;
+  text-align: right;
+}
+
+
+      .footer {
+        margin-top: 10px;
+        text-align: center;
+      }
+      .total {
+        font-weight: bold;
+        font-size: 14px;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>AÇAÍ DO TUBA</h2>
+    <p>${dataHora}</p>
+    <p><strong>Cliente:</strong> ${nomeCliente}</p>
+    <p><strong>Telefone:</strong> ${telefoneCliente}</p>
+    <p><strong>Entrega:</strong> ${tipoEntrega}</p>
+    ${
+      tipoEntrega.includes("Entrega")
+        ? `<p><strong>Endereço:</strong><br>${endereco}<br>${cep}</p>`
+        : ""
+    }
+    <p><strong>Pagamento:</strong><br>${pagamento}<br>${descricaoPagamento}</p>
+    <div class="hr"></div>
+    <div>${itens}</div>
+    <div class="hr"></div>
+    <p class="center">Obrigado pela preferência!</p>
+  </body>
+</html>
+`;
+
+    const printWindow = window.open("", "", "width=600,height=600");
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  },
+};
+
+pedido.template = {
+  card: `
         <div class="col-3 mb-4">
             <div class="card card-pedido">
 
@@ -605,7 +783,7 @@ pedido.template = {
         </div>
     `,
 
-    produto: `
+  produto: `
         <div class="card-item mb-2">
             <div class="container-detalhes">
                 <div class="detalhes-produto">
@@ -620,20 +798,20 @@ pedido.template = {
         </div>
     `,
 
-    opcional: `
+  opcional: `
         <div class="infos-produto">
             <p class="name-opcional mb-0">\${nome}</p>
             <p class="price-opcional mb-0">\${preco}</p>
         </div>
     `,
 
-    obs: `
+  obs: `
         <div class="infos-produto">
             <p class="obs-opcional mb-0">- \${observacao}</p>
         </div>
     `,
 
-    taxaentrega: `
+  taxaentrega: `
         <div class="card-item mb-2">
             <div class="detalhes-produto">
                 <div class="infos-produto">
@@ -644,7 +822,7 @@ pedido.template = {
         </div>
     `,
 
-    total: `
+  total: `
         <div class="card-item mb-2">
             <div class="detalhes-produto">
                 <div class="infos-produto">
@@ -654,4 +832,4 @@ pedido.template = {
             </div>
         </div>
     `,
-}
+};

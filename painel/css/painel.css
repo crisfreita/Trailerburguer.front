@@ -81,6 +81,7 @@
     border-bottom-left-radius: 15px;
 }
 
+
 .menu-item.active::before {
     content: "";
     height: 50px;
@@ -144,6 +145,23 @@ h1.title-page {
 
 .conteudo-inner {
     margin-top: 50px;
+    align-items: flex-end;
+    flex-direction: column;
+}
+
+.banner {
+    font-size: 20px;
+    flex: 1;
+    height: 520px;
+    position: relative;
+    top: 10px;
+    flex-direction: column;
+    color: black;
+}
+ 
+.banner .text-banner {
+    font-size: 20px;
+    flex: 1;
 }
 
 /* Tela Pedidos */
@@ -187,6 +205,10 @@ h1.title-page {
     color: var(--color-black);
 }
 
+.itensPedido .price-total {
+    color: var(--color-black);
+}
+
 .info-pedido i {
     width: 25px;
     text-align: center;
@@ -194,7 +216,7 @@ h1.title-page {
 
 .info-pedido span {
     display: block;
-    color: var(--color-text);
+    color: var(--color-black);
     font-size: 14px;
 }
 
@@ -257,6 +279,7 @@ h1.title-page {
 .card-pedido-body {
     height: 140px;
 }
+
 
 /* Modal detalhes */
 
@@ -342,6 +365,161 @@ h1.title-page {
 .footer-btn {
     display: flex;
     justify-content: end;
+}
+
+@media print {
+      @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  html, body, * {
+    /* garante cor preta em texto e SVGs */
+    color: #000 !important;
+    fill:  #000 !important;
+    stroke: #000 !important;
+
+     
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    font-size: 10px !important;
+  }
+
+   .modal-body {
+    width: 100mm !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 6px !important;
+    text-align: left !important;
+  }
+
+    /* Título injetado */
+    .modal-body::before {
+        content: "SISTEMA CHEF DELIVERY";
+        display: block;
+        text-align: center;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        margin-bottom: 4px !important;
+    }
+
+    b {
+        font-weight: normal!important;
+        font-size: 12px!important;
+    }
+
+    p, h1, h2, h3, h4, span {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .bg-menu * {
+        position: fixed;
+        visibility: hidden;
+    }
+
+    .modal-header,
+    .modal-header .close,
+    .modal-header .btn-close {
+        display: none !important;
+    }
+
+    i,
+    .img-icon-details,
+    .icon-edit,
+    .infos-produto i {
+        display: none !important;
+    }
+
+    .nome-empresa-detalhes {
+        display: block !important;
+        font-size: 12px !important;
+        font-weight: 600;
+        color: #000 !important;
+    }
+
+    .modal-sub-title {
+        font-size: 12px !important;
+    }
+
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+    }
+
+    #lblNomeCliente,
+    #lblFormaPagamentoTitulo,
+    #lblEndereco,
+    .carrinho .infos-produto .name {
+        font-size: 12px !important;
+        color: #000 !important;
+    }
+
+    #lblTelefoneCliente,
+    #lblFormaPagamentoDescricao,
+    #lblDataHora,
+    #lblCep {
+        font-size: 10px !important;
+        color: #000 !important;
+    }
+
+    #lblTipoEntrega {
+        position: absolute;
+        top: 45px;
+        right: 0;
+        z-index: 3;
+        font-size: 12px !important;
+        color: #000 !important;
+    }
+
+    .no-print,
+    .footer-btn {
+        display: none !important;
+    }
+
+    .modal-footer {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .propaganda * {
+        visibility: visible !important;
+        font-size: 50px !important;
+    }
+
+    .price-total {
+        color: #000 !important;
+    }
+
+    .info-pedido,
+    .price-total {
+        color: #000 !important;
+    }
+
+    .carrinho .infos-produto .name-opcional {
+        margin-left: 5px !important;
+        color: #000 !important;
+    }
+
+    .carrinho .infos-produto .obs-opcional {
+        font-size: 10px !important;
+        color: #000 !important;
+    }
+
+    .icon-edit,
+    .img-icon-details,
+    .info-pedido i,
+    .infos-produto .name i {
+        display: none;
+    }
+
 }
 
 /* Cardápio */
@@ -438,6 +616,90 @@ h1.title-page {
     justify-content: center;
     align-items: center;
 }
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 25px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 19px;
+    width: 19px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+input:checked + .slider {
+    background-color: var(--color-primary);
+}
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+.status-label {
+    font-size: 14px;
+}
+
+.banner-container {
+    text-align: center;
+    padding: 20px;
+    background-color: #fff5e6;
+    border: 2px dashed #ff6600;
+    border-radius: 10px;
+    max-width: 500px;
+    margin: 20px auto;
+    height: 110px;
+}
+
+.banner-container h2 {
+    font-size: 1.5rem;
+    color: #ff4500;
+    margin-bottom: 10px;
+}
+
+#banner-upload {
+    display: block;
+    margin: 10px auto;
+    padding: 5px;
+}
+
+.logo-banner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+
+#banner-preview {
+    width: 100%;
+    height: auto;
+    display: none;
+    border-radius: 8px;
+}
+
+.actions .switch-container {
+    transform: scale(0.75); /* Reduz o tamanho */
+    transform-origin: center center;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+
 
 /* Delivery e Retirada */
 
@@ -729,7 +991,6 @@ input:checked + .slider::before {
     color: var(--color-black);
 }
 
-
 .flex-hint {
     display: flex;
     justify-content: center;
@@ -766,28 +1027,42 @@ input:checked + .slider::before {
     height: 520px;
 }
 
+
 /* Impressão */
+ 
 
 #container-action-footer {
     justify-content: space-between;
 }
 
+.print {
+    width: 100%;
+    max-width: 58mm;
+}
+
 .print * {
     background: #FFF !important;
-    color: #000!important;
+    color: #000 !important;
+    font-size: 12px; /* Ajuste para melhor leitura */
 }
 
 .print .card {
     border: none !important;
     box-shadow: none !important;
-    border-radius: 0px !important;
-    padding: 0px !important; 
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0;
 }
 
 .print .container-dados-pedido {
     border-bottom: 1px solid #000;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
 }
 
-.print .footer-btn {
-    display: none!important;
+.print .footer-btn,
+.print .img-icon-details {
+    display: none !important;
 }
+
+

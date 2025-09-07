@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel - Pizzaria Maluca</title>
+    <title>Painel - Trailer Burguer</title>
 
     <link rel="stylesheet" href="../css/bootstrap.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/fontawesome.css" />
     <link rel="stylesheet" href="../css/animate.css" />
     <link rel="stylesheet" href="../css/main.css" />
     <link rel="stylesheet" href="./css/painel.css" />
+    <link rel="stylesheet" href="./css/responsivo.css" />
 
 </head>
 <body>
@@ -19,8 +21,10 @@
     </div>
 
     <div class="loader-full hidden">
-        <img src="../img/loader.png" width="100" />
+        <img src="../img/Imagem_do_WhatsApp_de_2025-06-22_à_s__11.40.53_56760167-removebg-preview.png" width="100" />
     </div>
+
+    <div id="overlay" onclick="toggleMenu()" style="display:none;"></div>
 
     <section class="bg-menu">
 
@@ -67,6 +71,11 @@
                     <div class="row">
                         <div class="col-12 d-flex align-items-center mt-4">
 
+                             <!-- Botão hamburguer -->
+                             <button class="btn-menu-toggle d-block d-md-none" onclick="toggleMenu()">
+                                <i class="fas fa-bars"></i>
+                            </button>
+
                             <h1 class="title-page">
                                 <b>
                                     <i class="fas fa-book-open"></i>&nbsp; Edição do Cardápio
@@ -88,7 +97,7 @@
                 </div>
             </div>
 
-            <div class="conteudo-inner">
+          <div class="conteudo-inner">
                 <div class="container">
                     <div class="row">
 
@@ -116,7 +125,7 @@
                         
                     </div>
                 </div>       
-            </div>
+          </div>
 
         </div>
 
@@ -645,6 +654,21 @@
     <script type="text/javascript" src="../js/app.js"></script>
     <script type="text/javascript" src="./js/icones-categoria.js"></script>
     <script type="text/javascript" src="./js/cardapio.js"></script>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.querySelector('.menu-left');
+            const overlay = document.getElementById('overlay');
+        
+            menu.classList.toggle('open');
+        
+            if (menu.classList.contains('open')) {
+                overlay.style.display = 'block';
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+    </script>
 
 </body>
 </html>

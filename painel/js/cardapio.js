@@ -168,63 +168,55 @@ cardapio.method = {
 
     },
 
-    // carrega os produtos dentro da categoria
-    carregarProdutos: (lista, idcategoria) => {
+   carregarProdutos: (lista, idcategoria) => {
+         if (lista.length > 0) {
+          lista.forEach((e, i) => {
+            let imagem = `style="background-image: url('/public/images/${e.imagem}'); background-size: cover;"`;
+            let btnEditar = 'hidden';
+            let btnRemover = 'hidden';
 
-        if (lista.length > 0) {
+            if (e.imagem == null) {
+                imagem = `style="background-image: url('/public/images/default.jpg'); background-size: cover;"`;
+                btnEditar = '';
+            } else {
+                btnRemover = '';
+            }
+  
+            // Define se o checkbox vem marcado ou não
+            let checked = Number(e.ativo) === 1 ? 'checked' : '';
 
-            // percorre as categorias e adiciona na tela
-            lista.forEach((e, i) => {
+            let temp = cardapio.template.produto
+                .replace(/\${id}/g, e.idproduto)
+                .replace(/\${imagem}/g, imagem)
+                .replace(/\${nome}/g, e.nome)
+                .replace(/\${descricao}/g, e.descricao)
+                .replace(/\${preco}/g, e.valor.toFixed(2).replace('.', ','))
+                .replace(/\${idcategoria}/g, idcategoria)
+                .replace(/\${btnEditar}/g, btnEditar)
+                .replace(/\${btnRemover}/g, btnRemover)
+                .replace(/\${opcionais}/g, e.opcionais > 0 ? `<span class="badge-adicionais">${e.opcionais}</span>` : '')
+                .replace(/\${checked}/g, checked); // Aqui você injeta o estado
 
-                let imagem = `style="background-image: url('/public/images/${e.imagem}'); background-size: cover;"`;
+            $("#listaProdutos-" + idcategoria).append(temp);
 
-                let btnEditar = 'hidden';
-                let btnRemover = 'hidden';
+            // Aplica também o texto do label após a renderização
+            cardapio.method.changeOpcaoProduto(e.idproduto, Number(e.ativo) === 1);
 
-                if (e.imagem == null) {
-                    imagem = `style="background-image: url('/public/images/default.jpg'); background-size: cover;"`;
-                    btnEditar = '';
-                }
-                else {
-                    btnRemover = '';
-                }
-
-                let temp = cardapio.template.produto.replace(/\${id}/g, e.idproduto)
-                    .replace(/\${imagem}/g, imagem)
-                    .replace(/\${nome}/g, e.nome)
-                    .replace(/\${descricao}/g, e.descricao)
-                    .replace(/\${preco}/g, e.valor.toFixed(2).replace('.', ','))
-                    .replace(/\${idcategoria}/g, idcategoria)
-                    .replace(/\${btnEditar}/g, btnEditar)
-                    .replace(/\${btnRemover}/g, btnRemover)
-                    .replace(/\${opcionais}/g, e.opcionais > 0 ? `<span class="badge-adicionais">${e.opcionais}</span>` : '');
-
-                $("#listaProdutos-" + idcategoria).append(temp);
-
-                // último item, inicia o evento de tooltip
-                if ((i + 1) == lista.length) {
-
-                    // incia o tooltip
-                    $('[data-toggle="tooltip"]').tooltip();
-
-                    $("#listaProdutos-" + idcategoria).sortable({
-                        scroll: false, // para não scrollar a tela
-                        update: function (event, ui) {
-                            // função para atualizar a ordem da lista
-                            cardapio.method.atualizarOrdemProduto(idcategoria);
-                        },
-                        handle: ".drag-icon-produto" // define a classe que pode receber o "drag and drop"
-                    })
-                }
-
-            })
-
-        }
-        else {
-            // nenhum produto encontrado
-        }
-
-    },
+            if ((i + 1) == lista.length) {
+                $('[data-toggle="tooltip"]').tooltip();
+                $("#listaProdutos-" + idcategoria).sortable({
+                    scroll: false,
+                    update: function (event, ui) {
+                        cardapio.method.atualizarOrdemProduto(idcategoria);
+                    },
+                    handle: ".drag-icon-produto"
+                });
+            }
+          });
+         } else {
+         // nenhum produto encontrado
+         }
+   },
 
     // método que atualiza a ordem das categorias
     atualizarOrdemCategoria: () => {
@@ -1082,7 +1074,7 @@ cardapio.method = {
                 return;
             }
 
-            if (isNaN(precosimples) || precosimples <= 0) {
+            if (isNaN(precosimples)) {
                 app.method.mensagem('Informe o valor do opcional, por favor.');
                 return;
             }
@@ -1136,7 +1128,7 @@ cardapio.method = {
                     continuar = false;
                 }
     
-                if (isNaN(precosimples) || precosimples <= 0) {
+                if (isNaN(precosimples)) {
                     continuar = false;
                 }
 
@@ -1315,6 +1307,116 @@ cardapio.method = {
 
     },
 
+     
+    // Função para alterar o estado do produto (ativado/desativado)
+    changeOpcaoProduto: (idproduto, isCheck) => {
+    const checkbox = document.querySelector(`#chkOpcaoProduto_${idproduto}`);
+    const label = document.querySelector(`#lblSwitchProduto_${idproduto}`);
+
+    let check = checkbox.checked;
+
+    // Se isCheck for passado, força o valor
+    if (isCheck !== undefined) {
+        check = isCheck;
+    }
+
+    // Atualiza checkbox e label conforme o estado
+    if (check) {
+        checkbox.checked = true;
+        label.innerText = 'Ativado';
+
+        // Só salva se a função foi chamada por interação do usuário (sem parâmetro)
+        if (isCheck === undefined) {
+            cardapio.method.salvarOpcaoProdutoCheck(idproduto, true);
+        }
+    } else {
+        checkbox.checked = false;
+        label.innerText = 'Desativado';
+
+        if (isCheck === undefined) {
+            cardapio.method.salvarOpcaoProdutoCheck(idproduto, false);
+        }
+    }
+    },
+
+
+    // Método para salvar o estado de ativação/desativação de um produto
+    salvarOpcaoProdutoCheck: (idproduto, ativar) => {
+         
+        app.method.loading(true);
+ 
+        console.log("ativar:", ativar)
+        console.log("idproduto:", idproduto)
+
+
+        const data = {
+         idproduto: idproduto,
+         ativar: ativar ? 1 : 0,
+        };
+ 
+          
+        app.method.post('/produto/ativar', JSON.stringify(data),
+         (response) => {
+             app.method.loading(false);
+ 
+              
+             if (response.status === "error") {
+                 app.method.mensagem(response.message);
+                 return;
+             }
+ 
+              
+             app.method.mensagem(response.message, 'green');
+         },
+         (error) => {
+             console.log('error', error)
+             app.method.loading(false);
+         }
+        );
+ 
+     },
+
+     
+     // desativa opcional  
+
+    changeOpcionalItem: (idopcionalitem, isCheck) => {
+        const checkbox = document.querySelector(`#chkOpcionalItem_${idopcionalitem}`);
+        let check = checkbox.checked;
+
+        if (isCheck !== undefined) {
+            check = isCheck;
+        }
+
+        checkbox.checked = check;
+
+        if (isCheck === undefined) {
+           cardapio.method.salvarOpcionalItemCheck(idopcionalitem, check);
+        }
+    },
+
+     salvarOpcionalItemCheck: (idopcionalitem, ativar) => {
+         app.method.loading(true);
+
+         const data = {
+            idopcionalitem: idopcionalitem,
+            ativar: ativar ? 1 : 0
+         };
+
+        app.method.post('/opcionalitem/ativar', JSON.stringify(data),
+             (response) => {
+                app.method.loading(false);
+                if (response.status === "error") {
+                  app.method.mensagem(response.message);
+                return;
+               }
+            app.method.mensagem(response.message, 'green');
+            },
+            (error) => {
+               console.error('Erro:', error);
+               app.method.loading(false);
+            }
+          );
+    },
 
 }
 
@@ -1403,7 +1505,14 @@ cardapio.template = {
                     <a href="#!" class="icon-action" data-toggle="tooltip" data-placement="top" title="Remover" onclick="cardapio.method.abrirModalRemoverProduto('\${idcategoria}', '\${id}')">
                         <i class="fas fa-trash-alt"></i>
                     </a>
-                </div>
+                </div>&nbsp;&nbsp;
+                   <div class="switch-container">
+                         <label class="switch">
+                            <input id="chkOpcaoProduto_\${id}" type="checkbox" \${checked} onchange="cardapio.method.changeOpcaoProduto(\${id})">
+                             <span class="slider"></span>
+                         </label>
+                      <span id="lblSwitchProduto_\${id}" class="status-label"></span>
+                  </div>
             </div>
         </div>
     `,
@@ -1417,18 +1526,24 @@ cardapio.template = {
         </div>
     `,
 
-    opcionalItem: `
+   opcionalItem: `
         <div class="card card-opcionais mt-2">
             <div class="infos-produto-opcional">
                 <p class="name mb-0"><b>\${nome}</b></p>
                 <p class="price mb-0"><b>\${valor}</b></p>
             </div>
             <div class="checks">
-                <div class="actions">
-                    <a href="#!" class="icon-action" data-toggle="tooltip" data-placement="top" title="Remover" onclick="cardapio.method.abrirModalRemoverOpcionalItem('\${idopcionalitem}')" data-bs-original-title="Remover">
-                        <i class="fas fa-trash-alt"></i>
-                    </a>
-                </div>
+              <div class="actions">
+                  <div class="switch-container me-2">
+                      <label class="switch">
+                         <input id="chkOpcionalItem_\${idopcionalitem}" type="checkbox" \${checked} onchange="cardapio.method.changeOpcionalItem('\${idopcionalitem}')">
+                         <span class="slider small"></span>
+                      </label>
+                  </div>
+                 <a href="#!" class="icon-action" title="Remover" onclick="cardapio.method.abrirModalRemoverOpcionalItem('\${idopcionalitem}')">
+                 <i class="fas fa-trash-alt"></i>
+                 </a>
+             </div>
             </div>
         </div>
     `,

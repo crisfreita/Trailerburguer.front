@@ -290,6 +290,7 @@ cardapio.templates = {
                     <p class="description">\${descricao}</p>
                     <p class="price"><b>R$ \${valor}</b></p>
                 </div>
+                
             </div>
         </div>
     `
