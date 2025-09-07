@@ -1141,10 +1141,10 @@ carrinho.method = {
     texto += `\n\n💰 *Valor total do pedido:* R$ ${dados.total.toFixed(2)}`;
 
     // 🔗 Link para acompanhar pedido
-    texto += `\n\n📍 *Acompanhe seu pedido:* https://sistemachefdelivery.com.br/pedido.html`;
+    texto += `\n\n📍 *Acompanhe seu pedido:* https://trailerburguer.com.br/pedido.html`;
 
     let encode = encodeURIComponent(texto);
-    let url = `https://wa.me/5533999694795?text=${encode}`;
+    let url = `https://wa.me/5533999014256?text=${encode}`;
 
     // ✅ Cria link e simula clique
     let link = document.createElement("a");
