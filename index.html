@@ -49,6 +49,68 @@
       </div>
     </header>
 
+    <!-- SLIDE PROMOCIONAL -->
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="./css/swiper-bundle.min.css" />
+    <!-- Swiper JS -->
+    <script src="./js/swiper-bundle.min.js"></script>
+    <!-- Swiper Banners -->
+    <section class="swiper-container width-fix mt-3">
+      <div class="swiper mySwiper">
+        <div class="swiper-wrapper">
+          <!-- Slide 1 -->
+          <div class="swiper-slide">
+            <img
+              src="./img/image.png"
+              alt="Promoção 1"
+              style="width: 100%; border-radius: 10px"
+            />
+          </div>
+          <!-- Slide 2 -->
+          <div class="swiper-slide">
+            <img
+              src="./img/image1.png"
+              alt="Promoção 2"
+              style="width: 100%; border-radius: 10px"
+            />
+          </div>
+          <!-- Slide 3 -->
+          <div class="swiper-slide">
+            <img
+              src="./img/Super Oferta - Desconto Especial.png"
+              alt="Promoção 3"
+              style="width: 100%; border-radius: 10px"
+            />
+          </div>
+        </div>
+
+        <!-- Paginação -->
+        <div class="swiper-pagination"></div>
+
+        <!-- Botões de navegação -->
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+      </div>
+    </section>
+
+    <script>
+      var swiper = new Swiper(".mySwiper", {
+        loop: true,
+        autoplay: {
+          delay: 3000,
+          disableOnInteraction: false,
+        },
+        pagination: {
+          el: ".swiper-pagination",
+          clickable: true,
+        },
+        navigation: {
+          nextEl: ".swiper-button-next",
+          prevEl: ".swiper-button-prev",
+        },
+      });
+    </script>
+
     <section class="categoria width-fix mt-4">
       <div class="container-menu">
         <div class="item-categoria me-2">
