@@ -75,15 +75,15 @@ b {
 }
 
 /* Container do Swiper */
-.swiper-container {
+/*.swiper-container {
   width: 100%;
-  max-width: 600px; /* se quiser limitar a largura */
+  max-width: 600px;  
   margin: 0 auto;
   margin-top: 10px;
-}
+}*/
 
 /* Slides */
-.swiper-slide img {
+/*.swiper-slide img {
   width: 100%;
   height: auto;
   border-radius: 12px;
@@ -95,21 +95,21 @@ b {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* Diminuir tamanho das setas */
+ Diminuir tamanho das setas 
 .swiper-button-next,
 .swiper-button-prev {
-  width: 10px; /* largura menor */
-  height: 10px; /* altura menor */
+  width: 10px; /* largura menor 
+  height: 10px; /* altura menor 
 }
 
 .swiper-button-next::after,
 .swiper-button-prev::after {
-  font-size: 6px; /* tamanho do ícone */
+  font-size: 6px; /* tamanho do ícone 
 }
 
 .swiper-pagination-bullet-active {
-  background: #ff4081; /* cor de destaque */
-}
+  background: #ff4081; /* cor de destaque 
+}*/
 
 .toast {
   opacity: 1 !important;
