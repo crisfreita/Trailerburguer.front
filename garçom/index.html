@@ -21,5 +21,12 @@
       <div class="mesa ocupada" onclick="abrirPedido(7)">Mesa 7</div>
       <div class="mesa livre" onclick="abrirPedido(8)">Mesa 8</div>
     </div>
+
+    <script>
+      function abrirPedido(mesa) {
+        // redireciona para pedido.html passando o número da mesa na URL
+        window.location.href = "pedido.html?mesa=" + mesa;
+      }
+    </script>
   </body>
 </html>
