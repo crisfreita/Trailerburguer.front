@@ -34,6 +34,10 @@ header {
   color: #fff;
   cursor: pointer;
   transition: transform 0.2s;
+  user-select: none; /* impede selecionar o texto */
+  -webkit-user-select: none; /* Chrome/Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE/Edge */
 }
 
 .mesa:hover {
