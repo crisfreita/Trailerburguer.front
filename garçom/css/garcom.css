@@ -1,0 +1,145 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f4f4f4;
+}
+
+header {
+  background: #007bff;
+  color: white;
+  padding: 40px 20px; /* deixa o header mais alto */
+  text-align: center;
+  font-size: 64px; /* 🔥 tamanho da palavra “Mesas” bem grande */
+  font-weight: bold; /* negrito */
+  letter-spacing: 2px; /* espaçamento entre letras */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* sombra suave */
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* sempre 3 mesas por linha */
+  gap: 25px; /* espaço maior entre as mesas */
+  padding: 20px;
+}
+
+.mesa {
+  height: 180px; /* mesas mais altas */
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px; /* número da mesa maior */
+  font-weight: bold;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.mesa:hover {
+  transform: scale(1.08);
+}
+
+.livre {
+  background: green;
+}
+
+.ocupada {
+  background: red;
+}
+
+/* 📱 Ajustes para tablet */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 mesas por linha */
+    gap: 20px;
+  }
+
+  .mesa {
+    height: 200px;
+    font-size: 30px;
+  }
+}
+
+/* 📱 Ajustes para celular pequeno */
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr; /* 1 mesa por linha */
+  }
+
+  .mesa {
+    height: 220px;
+    font-size: 34px;
+  }
+}
+
+/* Cabeçalho do pedido */
+header {
+  background: #007bff;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 24px;
+}
+
+/* Rodapé com os botões */
+.pedido-footer {
+  background: #222;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pedido-footer span {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.pedido-footer .btn {
+  font-size: 18px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  margin-left: 5px;
+}
+
+.btn-voltar {
+  background: #6c757d;
+  color: #fff;
+}
+
+.btn-voltar:hover {
+  background: #5a6268;
+}
+
+.btn-cancelar {
+  background: #dc3545;
+  color: #fff;
+}
+
+.btn-cancelar:hover {
+  background: #c82333;
+}
+
+.btn-enviar {
+  background: #28a745;
+  color: #fff;
+}
+
+.btn-enviar:hover {
+  background: #218838;
+}
+
+/* 📱 Mobile */
+@media (max-width: 600px) {
+  .pedido-footer {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .pedido-footer .btn {
+    width: 100%;
+    margin: 0;
+  }
+}
