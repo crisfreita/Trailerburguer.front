@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Garçom - Pedido</title>
+
+    <link rel="stylesheet" href="../css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../css/fontawesome.css" />
+    <link rel="stylesheet" href="../css/main.css" />
+    <link rel="stylesheet" href="./css/garcom.css" />
+  </head>
+  <body>
+    <header class="p-3 bg-primary text-white text-center">
+      <h2 id="tituloMesa">Pedido da Mesa</h2>
+    </header>
+
+    <!-- Categorias -->
+    <section class="categoria width-fix mt-3">
+      <div class="container-menu" id="listaCategorias"></div>
+    </section>
+
+    <!-- Lista de produtos -->
+    <section
+      class="lista width-fix mt-0 pb-5"
+      id="listaItensCardapio"
+    ></section>
+
+    <!-- Carrinho da Mesa -->
+    <footer class="pedido-footer fixed-bottom">
+      <button class="btn btn-voltar" onclick="voltarMesas()">⬅ Voltar</button>
+      <span id="qtdItensMesa">0 itens</span>
+      <div>
+        <button class="btn btn-cancelar" onclick="cancelarPedido()">
+          Cancelar
+        </button>
+        <button class="btn btn-enviar" onclick="enviarPedidoMesa()">
+          Enviar Pedido
+        </button>
+      </div>
+    </footer>
+
+    <script src="../js/bootstrap.bundle.min.js"></script>
+    <script src="./js/pedido.js"></script>
+
+    <script>
+      function voltarMesas() {
+        window.location.href = "index.html";
+      }
+
+      function cancelarPedido() {
+        if (confirm("Tem certeza que deseja cancelar este pedido?")) {
+          // limpa carrinho
+          carrinho = [];
+          document.getElementById("qtdItensMesa").innerText = "0 itens";
+          alert("Pedido cancelado.");
+        }
+      }
+    </script>
+  </body>
+</html>
