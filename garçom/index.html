@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Garçom - Mesas</title>
-    <link rel="stylesheet" href="../garçom/css/garcom.css" />
+    <link rel="stylesheet" href="../garcom/css/garcom.css" />
   </head>
   <body>
     <header>
@@ -12,20 +12,20 @@
       </div>
     </header>
     <div class="grid">
-      <div class="mesa livre" onclick="abrirPedido(1)">Mesa 1</div>
-      <div class="mesa ocupada" onclick="abrirPedido(2)">Mesa 2</div>
-      <div class="mesa livre" onclick="abrirPedido(3)">Mesa 3</div>
-      <div class="mesa ocupada" onclick="abrirPedido(4)">Mesa 4</div>
-      <div class="mesa livre" onclick="abrirPedido(5)">Mesa 5</div>
-      <div class="mesa livre" onclick="abrirPedido(6)">Mesa 6</div>
-      <div class="mesa ocupada" onclick="abrirPedido(7)">Mesa 7</div>
-      <div class="mesa livre" onclick="abrirPedido(8)">Mesa 8</div>
+      <div class="mesa livre" onclick="abrirMesa(1)">Mesa 1</div>
+      <div class="mesa ocupada" onclick="abrirMesa(2)">Mesa 2</div>
+      <div class="mesa livre" onclick="abrirMesa(3)">Mesa 3</div>
+      <div class="mesa ocupada" onclick="abrirMesa(4)">Mesa 4</div>
+      <div class="mesa livre" onclick="abrirMesa(5)">Mesa 5</div>
+      <div class="mesa livre" onclick="abrirMesa(6)">Mesa 6</div>
+      <div class="mesa ocupada" onclick="abrirMesa(7)">Mesa 7</div>
+      <div class="mesa livre" onclick="abrirMesa(8)">Mesa 8</div>
     </div>
 
     <script>
-      function abrirPedido(mesa) {
-        // redireciona para pedido.html passando o número da mesa na URL
-        window.location.href = "pedido.html?mesa=" + mesa;
+      function abrirMesa(mesa) {
+        // Agora direciona para item.html passando o número da mesa
+        window.location.href = "item.html?mesa=" + mesa;
       }
     </script>
   </body>
