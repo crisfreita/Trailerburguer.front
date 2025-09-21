@@ -1,9 +1,7 @@
-html,
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   background: #f4f4f4;
-  scroll-behavior: smooth;
 }
 
 header {
@@ -35,10 +33,6 @@ header {
   color: #fff;
   cursor: pointer;
   transition: transform 0.2s;
-  user-select: none; /* impede selecionar o texto */
-  -webkit-user-select: none; /* Chrome/Safari */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE/Edge */
 }
 
 .mesa:hover {
@@ -136,16 +130,532 @@ header {
   background: #218838;
 }
 
-/* 📱 Mobile */
-@media (max-width: 600px) {
-  .pedido-footer {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
+.produtos {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.produto {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  background: #fff;
+}
+
+.produto h4 {
+  margin: 0 0 5px;
+  font-size: 20px;
+}
+
+.produto p.descricao {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.opcionais {
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.opcionais label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.produto textarea {
+  width: 100%;
+  height: 60px;
+  margin-top: 10px;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.produto button {
+  margin-top: 10px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.produto button:hover {
+  background: #0056b3;
+}
+
+/* Rodapé */
+.pedido-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Container principal */
+.container-menu {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  padding: 12px 15px;
+  background: #fff;
+  border-bottom: 2px solid #eee;
+  gap: 10px;
+  scrollbar-width: thin;
+}
+
+/* Barra de rolagem */
+.container-menu::-webkit-scrollbar {
+  height: 6px;
+}
+.container-menu::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 4px;
+}
+.container-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Container do botão */
+.item-categoria {
+  display: flex;
+  align-items: center;
+}
+
+/* Botão da lupa */
+.search-container {
+  flex: 1 0 auto;
+  display: flex;
+  align-items: center;
+  transform-origin: left;
+  transition: all 0.3s ease-in-out;
+  transform: scaleX(0);
+  opacity: 0;
+  width: 0;
+  padding: 0;
+}
+
+.search-container input {
+  width: 99%;
+}
+
+@media (max-width: 767px) {
+  .search-container input {
+    width: 98%;
+  }
+}
+
+.search-container.show {
+  transform: scaleX(1);
+  opacity: 1;
+  width: auto;
+}
+
+.search-container .form-control {
+  margin: 0;
+  transition: all 0.3s ease-in-out;
+}
+
+.btn-close-search {
+  position: absolute;
+  top: auto;
+  right: 10px;
+  padding: 8px 15px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease-in-out;
+  border: none;
+  border-radius: 15px;
+  background: none;
+  color: var(--color-black);
+}
+
+#btnPesquisar {
+  width: 38px; /* largura fixa */
+  height: 38px; /* altura fixa */
+  padding: 0; /* remove padding extra */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  border-radius: 8px; /* arredondado igual aos botões */
+  background: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  color: #333;
+  transition: all 0.3s ease-in-out;
+}
+
+#btnPesquisar:hover {
+  background: #f1f1f1;
+}
+
+/* ---- MENU DE CATEGORIAS (opcional) ---- */
+.container-menu {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 10px 12px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.container-menu .item-categoria {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: 0.2s;
+  user-select: none;
+}
+.container-menu .item-categoria:hover {
+  background: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+.container-menu .item-categoria.active {
+  background: #007bff;
+  color: #fff;
+  border-color: #0056b3;
+}
+
+/* Container de produtos */
+#cardapioContainer {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 colunas */
+  gap: 15px; /* espaço entre os cards */
+  padding-bottom: 100px; /* espaço extra p/ rodapé fixo */
+}
+
+/* Card do produto */
+.card-item {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.card-item:hover {
+  transform: scale(1.03);
+}
+
+/* Imagem do produto */
+.card-item .img-produto {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.card-item .img-produto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.produtos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  padding-bottom: 40px; /* espaço dentro de cada categoria */
+}
+
+#listaItensCardapio {
+  padding-bottom: 100px; /* espaço extra pro rodapé fixo */
+}
+
+/* Nome */
+.card-item .title-produto {
+  font-size: 0.95rem;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+/* Preço */
+.card-item .price-produto {
+  font-size: 1rem;
+  color: #007bff;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+/* Grid de produtos */
+.produtos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* duas colunas fixas */
+  gap: 15px;
+}
+
+/* Card do produto */
+.card-item {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.card-item:hover {
+  transform: scale(1.03);
+}
+
+/* Info */
+.info-produto {
+  padding: 10px;
+  text-align: center;
+}
+
+.title-produto {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: #444;
+}
+
+.price-produto {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #007bff;
+  margin-top: 5px;
+  display: block;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+}
+
+/* 🔹 Container do controle */
+.add-carrinho {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+/* 🔹 Botões (+ e -) */
+.add-carrinho .btn-menos,
+.add-carrinho .btn-mais {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.add-carrinho .btn-menos:hover,
+.add-carrinho .btn-mais:hover {
+  background: #ffcc00;
+  color: #000;
+  border-color: #ffcc00;
+}
+
+/* 🔹 Número central */
+.add-carrinho .add-numero-itens {
+  font-size: 1.3rem;
+  font-weight: bold;
+  min-width: 30px;
+  text-align: center;
+  color: #333;
+}
+
+/* 🔹 Responsividade */
+@media (max-width: 767px) {
+  .add-carrinho .btn-menos,
+  .add-carrinho .btn-mais {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
   }
 
-  .pedido-footer .btn {
-    width: 100%;
-    margin: 0;
+  .add-carrinho .add-numero-itens {
+    font-size: 1.1rem;
   }
+}
+
+.modal .close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+/* MODAL - container */
+#produtoModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: none; /* inicia fechado */
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 10px;
+}
+
+/* Descrição do produto */
+.descricao-produto {
+  font-size: 0.95rem;
+  color: #555;
+  margin: 5px 0 15px 0;
+  line-height: 1.4;
+}
+
+/* Conteúdo do modal */
+#produtoModal .modal-content {
+  background: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 350px; /* menor que antes */
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-family: Arial, sans-serif;
+}
+
+/* Container da quantidade */
+.quantidade-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+/* Botões de quantidade */
+.quantidade-container .btn-qty {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantidade-container .btn-qty:hover {
+  background: #0056b3;
+}
+
+/* Input central */
+.quantidade-container input {
+  width: 55px;
+  height: 34px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* Botão de fechar */
+#produtoModal .close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  color: #666;
+}
+
+/* Cabeçalho */
+#produtoModal h2 {
+  font-size: 1.2rem;
+  margin: 0 0 4px 0;
+  color: #333;
+}
+
+#produtoModal p {
+  font-size: 0.95rem;
+  margin: 0 0 10px 0;
+  color: #555;
+}
+
+/* Imagem */
+/* Imagem menor no modal */
+#produtoModal img {
+  width: 70%; /* reduz a largura */
+  max-width: 200px; /* limite máximo */
+  display: block;
+  margin: 0 auto 12px auto; /* centraliza e dá espaçamento */
+  border-radius: 8px;
+}
+
+/* Seções */
+#produtoModal h3 {
+  font-size: 1rem;
+  margin: 10px 0 6px;
+  color: #444;
+}
+
+/* Opcionais */
+#produtoModal label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* Observação */
+#produtoModal textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  font-size: 0.9rem;
+}
+
+/* Botão */
+#produtoModal #btnAdicionar {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: #ff6600;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#produtoModal #btnAdicionar:hover {
+  background: #e65500;
 }

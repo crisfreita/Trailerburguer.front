@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Garçom - Itens da Categoria</title>
+
+    <link rel="stylesheet" href="../css/bootstrap.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./css/garcom.css" />
+  </head>
+  <body>
+    <!-- Cabeçalho -->
+    <header class="p-3 bg-primary text-white text-center">
+      <h2 id="tituloMesa">Mesa</h2>
+    </header>
+
+    <section class="categoria width-fix mt-4">
+      <div class="container-menu d-flex align-items-center">
+        <!-- Lista de categorias -->
+        <div class="container-menu" id="listaCategorias"></div>
+      </div>
+    </section>
+
+    <!-- Lista de Produtos -->
+    <section class="cardapio mt-4" id="cardapio">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-12">
+            <!-- Aqui entram os produtos agrupados por categoria -->
+            <div id="listaItensCardapio"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 🔹 Modal Único -->
+    <div id="produtoModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+
+        <!-- Nome e Preço -->
+        <h2 id="modalNome">Nome do Produto</h2>
+        <p id="modalPreco">R$ 0,00</p>
+
+        <!-- Descrição -->
+        <p id="modalDescricao" class="descricao-produto"></p>
+
+        <!-- Imagem (opcional) -->
+        <img id="modalImg" src="" alt="Produto" style="display: none" />
+
+        <!-- Opcionais -->
+        <h3>Opcionais</h3>
+        <div id="opcionaisContainer">
+          <!-- Aqui você pode popular dinamicamente -->
+        </div>
+
+        <!-- Observação -->
+        <h3>Observação</h3>
+        <textarea
+          id="obsProduto"
+          placeholder="Ex: sem cebola, ponto da carne..."
+        ></textarea>
+
+        <!-- Quantidade -->
+        <h3>Quantidade</h3>
+        <div class="add-carrinho">
+          <span class="btn-menos" onclick="garcom.method.diminuirQuantidade()">
+            <i class="fas fa-minus"></i>
+          </span>
+          <span class="add-numero-itens" id="qntd-carrinho">1</span>
+          <span class="btn-mais" onclick="garcom.method.aumentarQuantidade()">
+            <i class="fas fa-plus"></i>
+          </span>
+        </div>
+
+        <!-- Botão -->
+        <button id="btnAdicionar">
+          Adicionar ao Pedido <span id="totalPedido">R$ 0,00</span>
+        </button>
+      </div>
+    </div>
+
+    <section class="menu-bottom details hidden" id="menu-bottom">
+      <div class="add-carrinho">
+        <span class="btn-menos" onclick="item.method.diminuirQuantidade()">
+          <i class="fas fa-minus"></i>
+        </span>
+        <span class="add-numero-itens" id="qntd-carrinho">1</span>
+        <span class="btn-mais" onclick="item.method.aumentarQuantidade()">
+          <i class="fas fa-plus"></i>
+        </span>
+      </div>
+      <a
+        class="btn btn-yellow btn-sm"
+        onclick="item.method.adicionarAoCarrinho()"
+      >
+        Adicionar <span id="btn-preco-produto"></span>
+      </a>
+    </section>
+
+    <!-- Rodapé -->
+    <footer class="pedido-footer p-3 bg-dark text-white fixed-bottom">
+      <button class="btn btn-secondary" onclick="voltarMesas()">
+        ⬅ Voltar
+      </button>
+      <button class="btn btn-success" onclick="abrirCarrinho()">
+        Ver Pedido
+      </button>
+    </footer>
+
+    <script>
+      // Abrir modal ao clicar no produto
+      document.querySelectorAll(".card-item").forEach((card) => {
+        card.addEventListener("click", () => {
+          const nome = card.dataset.nome;
+          const preco = card.dataset.preco;
+          const img = card.dataset.img;
+
+          document.getElementById("modalNome").textContent = nome;
+          document.getElementById("modalPreco").textContent = "R$ " + preco;
+          document.getElementById("modalImg").src = img;
+
+          document.getElementById("produtoModal").style.display = "flex";
+        });
+      });
+
+      // Fechar modal
+      document.querySelector(".modal .close").addEventListener("click", () => {
+        document.getElementById("produtoModal").style.display = "none";
+      });
+
+      // Capturar dados escolhidos
+      document.getElementById("btnAdicionar").addEventListener("click", () => {
+        const nome = document.getElementById("modalNome").textContent;
+        const preco = document.getElementById("modalPreco").textContent;
+        const obs = document.getElementById("obsProduto").value;
+
+        const opcionais = [];
+        document
+          .querySelectorAll("#produtoModal input[type=checkbox]:checked")
+          .forEach((op) => {
+            opcionais.push(op.value);
+          });
+
+        console.log({
+          nome,
+          preco,
+          opcionais,
+          obs,
+        });
+
+        alert(
+          "Produto adicionado!\n\n" +
+            nome +
+            "\n" +
+            preco +
+            "\nOpcionais: " +
+            opcionais.join(", ") +
+            "\nObs: " +
+            obs
+        );
+
+        document.getElementById("produtoModal").style.display = "none";
+      });
+    </script>
+
+    <script type="text/javascript" src="../js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./js/app.js"></script>
+    <script
+      type="text/javascript"
+      src="../painel/js/icones-categoria.js"
+    ></script>
+    <script type="text/javascript" src="./js/item.js"></script>
+    <script type="text/javascript" src="./js/search.js"></script>
+  </body>
+</html>
