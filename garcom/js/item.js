@@ -18,7 +18,7 @@ garcom.method = {
   // 🔹 Buscar categorias
   obterCategorias: async () => {
     try {
-      let res = await fetch("http://www.trailerburguer.com.br/categoria");
+      let res = await fetch("/categoria"); // 👈 relativo ao domínio atual
       let response = await res.json();
 
       if (response.status === "error") {
