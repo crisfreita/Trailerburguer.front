@@ -77,7 +77,7 @@ garcom.method = {
   // 🔹 Buscar todos os produtos
   obterProdutos: async () => {
     try {
-      let res = await fetch("http://www.trailerburguer.com.br/produto");
+      let res = await fetch("/produto"); // 👈 relativo ao domínio atual
       let response = await res.json();
 
       if (response.status === "error") {
