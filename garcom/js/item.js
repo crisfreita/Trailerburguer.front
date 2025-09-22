@@ -46,7 +46,7 @@ garcom.method = {
       btn.id = `categoria-${e.idcategoria}`;
       if (i === 0) btn.classList.add("active");
 
-      btn.innerHTML = `<i class="fas fa-utensils"></i> ${e.nome}`;
+      btn.innerHTML = `${e.nome}`;
       btn.onclick = () => {
         document
           .querySelectorAll("#listaCategorias a")
@@ -94,31 +94,36 @@ garcom.method = {
   // 🔹 Renderizar produtos dentro de suas categorias
   carregarProdutos: (list) => {
     if (list.length > 0) {
-      list.forEach((e) => {
-        let temp = garcom.templates.produto
-          .replace(/\${nome}/g, e.nome)
-          .replace(/\${valor}/g, e.valor.toFixed(2).replace(".", ","))
-          .replace(/\${descricao}/g, e.descricao || "");
+      // 🔹 Primeiro agrupar por categoria
+      let produtosPorCategoria = {};
 
+      list.forEach((e) => {
+        if (!produtosPorCategoria[e.idcategoria]) {
+          produtosPorCategoria[e.idcategoria] = [];
+        }
+        produtosPorCategoria[e.idcategoria].push(e);
+      });
+
+      // 🔹 Agora renderizar separados
+      Object.keys(produtosPorCategoria).forEach((idcat) => {
         let grid = document.querySelector(
-          `#categoria-header-${e.idcategoria} .produtos-grid`
+          `#categoria-header-${idcat} .produtos-grid`
         );
-        if (grid) grid.innerHTML += temp;
+        if (grid) {
+          // limpa os produtos antigos
+          grid.innerHTML = "";
+
+          produtosPorCategoria[idcat].forEach((e) => {
+            let temp = garcom.templates.produto
+              .replace(/\${nome}/g, e.nome)
+              .replace(/\${valor}/g, e.valor.toFixed(2).replace(".", ","))
+              .replace(/\${descricao}/g, e.descricao || "");
+
+            grid.innerHTML += temp;
+          });
+        }
       });
     }
-
-    // Evento para abrir modal com detalhes
-    document.querySelectorAll(".card-item").forEach((card) => {
-      card.addEventListener("click", () => {
-        document.getElementById("modalNome").textContent = card.dataset.nome;
-        document.getElementById("modalPreco").textContent =
-          "R$ " + parseFloat(card.dataset.preco).toFixed(2).replace(".", ",");
-        document.getElementById("modalDescricao").textContent =
-          card.dataset.descricao;
-
-        document.getElementById("produtoModal").style.display = "flex";
-      });
-    });
   },
 
   validarCategoriaScroll: () => {
