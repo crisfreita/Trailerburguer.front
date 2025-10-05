@@ -461,6 +461,36 @@ section.categoria {
 
 /* Detalhes do produto */
 
+/* Estado esgotado (produto desativado) */
+.item-cardapio.esgotado {
+  opacity: 0.6;
+  pointer-events: none; /* desativa clique */
+  filter: grayscale(100%);
+  position: relative;
+}
+
+/* Permite sobrepor o texto na imagem */
+.container-img-produto {
+  position: relative;
+}
+
+/* Tarja “Esgotado” centralizada sobre a imagem */
+.overlay-esgotado {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(220, 53, 69, 0.9);
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  z-index: 5;
+  text-transform: uppercase;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
 .bg-top.details {
   height: 410px;
 }
