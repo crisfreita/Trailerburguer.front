@@ -154,23 +154,41 @@ cardapio.method = {
   carregarProdutos: (list) => {
     if (list.length > 0) {
       list.forEach((e, i) => {
-        let _imagem = e.imagem;
+        let _imagem = e.imagem || "default.jpg";
 
-        if (e.imagem == null) {
-          _imagem = "default.jpg";
-        }
-
+        // gera o HTML base
         let temp = cardapio.templates.produto
           .replace(/\${idproduto}/g, e.idproduto)
           .replace(/\${nome}/g, e.nome)
           .replace(/\${imagem}/g, _imagem)
-          .replace(/\${descricao}/g, e.descricao)
+          .replace(/\${descricao}/g, e.descricao || "")
           .replace(/\${valor}/g, e.valor.toFixed(2).replace(".", ","));
 
-        // adiciona o produto na categoria
-        document.querySelector(
+        // converte o HTML para DOM temporário
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = temp.trim();
+        const card = tempDiv.firstChild;
+
+        // se o produto estiver desativado (ativo == 0)
+        if (e.ativo == 0) {
+          card.classList.add("esgotado");
+          card.removeAttribute("onclick");
+
+          // adiciona a tarja "Esgotado" na imagem
+          const imgContainer = card.querySelector(".container-img-produto");
+          if (imgContainer) {
+            const overlay = document.createElement("div");
+            overlay.className = "overlay-esgotado";
+            overlay.innerText = "Esgotado";
+            imgContainer.appendChild(overlay);
+          }
+        }
+
+        // insere o produto na categoria correspondente
+        const container = document.querySelector(
           "#categoria-header-" + e.idcategoria
-        ).innerHTML += temp;
+        );
+        if (container) container.appendChild(card);
       });
     }
   },
