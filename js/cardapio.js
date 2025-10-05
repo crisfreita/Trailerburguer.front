@@ -262,30 +262,16 @@ cardapio.templates = {
     `,
 
   produto: `
-<div class="card mb-2 item-cardapio ${ativo == 0 ? "esgotado" : ""}" 
-     ${
-       ativo == 0
-         ? ""
-         : `onclick="cardapio.method.abrirProduto('\${idproduto}')"`
-     }>
-    <div class="d-flex">
-        <div class="container-img-produto" 
-             style="background-image: url('/public/images/\${imagem}'); background-size: cover; position: relative;">
-             
-             ${
-               ativo == 0
-                 ? `
-                <div class="overlay-esgotado">Esgotado</div>
-             `
-                 : ""
-             }
+        <div class="card mb-2 item-cardapio" onclick="cardapio.method.abrirProduto('\${idproduto}')">
+            <div class="d-flex">
+                <div class="container-img-produto" style="background-image: url('/public/images/\${imagem}'); background-size: cover;"></div>
+                <div class="infos-produto">
+                    <p class="name"><b>\${nome}</b></p>
+                    <p class="description">\${descricao}</p>
+                    <p class="price"><b>R$ \${valor}</b></p>
+                </div>
+                
+            </div>
         </div>
-        <div class="infos-produto">
-            <p class="name"><b>\${nome}</b></p>
-            <p class="description">\${descricao}</p>
-            <p class="price"><b>R$\${valor}</b></p>
-        </div>
-    </div>
-</div>
     `,
 };
