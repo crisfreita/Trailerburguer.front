@@ -19,6 +19,8 @@ var MODAL_ENDERECO = new bootstrap.Modal(
   document.getElementById("modalEndereco")
 );
 
+var PAGAMENTO_ONLINE = false;
+
 carrinho.event = {
   init: () => {
     $(".cep").mask("00000-000");
@@ -176,7 +178,7 @@ carrinho.method = {
     }
   },
 
-  // abre a modal para "editar" ou "remover" o produto
+  // abre a modal para 'remover' o produto
   abrirModalOpcoesProduto: (guid) => {
     PRODUTO_SELECIONADO = guid;
     document.querySelector("#modalActionsProduto").classList.remove("hidden");
@@ -186,55 +188,6 @@ carrinho.method = {
   fecharModalActionsProduto: () => {
     PRODUTO_SELECIONADO = "";
     document.querySelector("#modalActionsProduto").classList.add("hidden");
-  },
-
-  // edita o produto do carrinho
-  editarProdutoCarrinho: () => {
-    if (PRODUTO_SELECIONADO.length > 0) {
-      let carrinhoLocal = app.method.obterValorSessao("cart");
-
-      if (carrinhoLocal != undefined) {
-        let cart = JSON.parse(carrinhoLocal);
-
-        if (cart.itens.length > 0) {
-          // Localiza o produto no carrinho pelo guid
-          let produto = cart.itens.find((e) => {
-            return e.guid != PRODUTO_SELECIONADO;
-          });
-
-          if (produto) {
-            // Se a nova quantidade for 0, remove o produto
-            if (novaQuantidade <= 0) {
-              cart.itens = cart.itens.filter((e) => {
-                return e.guid != PRODUTO_SELECIONADO;
-              });
-              app.method.mensagem("Item removido.", "green");
-            } else {
-              // Atualiza a quantidade do produto
-              produto.quantidade = novaQuantidade;
-              app.method.mensagem("Quantidade atualizada.", "green");
-            }
-
-            // Salva o novo carrinho
-            app.method.gravarValorSessao(JSON.stringify(cart), "cart");
-
-            // Recarrega o carrinho
-            carrinho.method.obterCarrinho();
-
-            // Reseta a seleção de produto
-            document
-              .querySelector("#modalActionsProduto")
-              .classList.add("hidden");
-          } else {
-            app.method.mensagem("Produto não encontrado no carrinho.", "red");
-          }
-        }
-      } else {
-        app.method.mensagem("Carrinho vazio.", "red");
-      }
-    } else {
-      app.method.mensagem("Nenhum produto selecionado.", "red");
-    }
   },
 
   // remove o produto do carrinho
@@ -573,6 +526,12 @@ carrinho.method = {
     let complemento = document.getElementById("txtComplemento").value.trim();
     let uf = document.getElementById("ddlUf").value.trim();
 
+    if (cep.length <= 0) {
+      app.method.mensagem("Informe o CEP, por favor.");
+      document.getElementById("txtCEP").focus();
+      return;
+    }
+
     if (endereco.length <= 0) {
       app.method.mensagem("Informe o Endereço, por favor.");
       document.getElementById("txtEndereco").focus();
@@ -619,114 +578,6 @@ carrinho.method = {
     carrinho.method.obterEndereco();
     carrinho.method.validarEnderecoSelecionado();
     MODAL_ENDERECO.hide();
-  },
-
-  buscarPorEndereco: () => {
-    let rua = document.querySelector("#txtEndereco").value;
-    let bairro = document.querySelector("#txtBairro").value;
-    let cidade = document.querySelector("#txtCidade").value;
-
-    if (!rua || !bairro || !cidade) {
-      app.method.mensagem("Preencha rua, bairro e cidade.");
-      return;
-    }
-
-    // Monta a query para o Google Maps
-    let enderecoQuery = encodeURIComponent(
-      `${rua}, ${bairro}, ${cidade}, Brasil`
-    );
-    let apiKey = "AIzaSyBeqAHQL5djcTkZgtJuCa24jJSnkTiDby8"; // coloque sua chave
-
-    let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${enderecoQuery}&key=${apiKey}`;
-
-    fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.status === "OK" && data.results.length > 0) {
-          let resultado = data.results[0];
-          let endereco = resultado.formatted_address;
-          let localizacao = resultado.geometry.location;
-
-          console.log("Endereço encontrado:", endereco);
-          console.log(
-            "Latitude:",
-            localizacao.lat,
-            "Longitude:",
-            localizacao.lng
-          );
-
-          // Aqui você pode salvar usando seu método
-          app.method.gravarValorSessao("address", endereco);
-        } else {
-          app.method.mensagem("Endereço não encontrado.");
-        }
-      })
-      .catch((error) => {
-        console.error("Erro ao buscar endereço:", error);
-        app.method.mensagem("Erro na busca do endereço.");
-      });
-  },
-
-  buscarEnderecoGoogle: () => {
-    const rua = document.getElementById("txtEndereco").value.trim();
-    const cidade = document.getElementById("txtCidade").value.trim();
-    const estado = document.getElementById("ddlUf").value.trim();
-
-    if (rua !== "") {
-      const query = `${rua}, ${cidade}, ${estado}`;
-      const apiKey = "AIzaSyBeqAHQL5djcTkZgtJuCa24jJSnkTiDby8"; // troque pela sua chave real
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-        query
-      )}&key=${apiKey}`;
-
-      fetch(url)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.status === "OK" && data.results.length > 0) {
-            const result = data.results[0];
-            const address = result.address_components;
-
-            // Preencher os campos com base nos componentes
-            address.forEach((component) => {
-              if (component.types.includes("route")) {
-                document.getElementById("txtEndereco").value =
-                  component.long_name;
-              }
-              if (
-                component.types.includes("sublocality") ||
-                component.types.includes("neighborhood")
-              ) {
-                document.getElementById("txtBairro").value =
-                  component.long_name;
-              }
-              if (component.types.includes("locality")) {
-                document.getElementById("txtCidade").value =
-                  component.long_name;
-              }
-              if (component.types.includes("administrative_area_level_1")) {
-                document.getElementById("ddlUf").value = component.short_name;
-              }
-            });
-
-            // Coordenadas (se precisar)
-            document.getElementById("txtLatitude").value =
-              result.geometry.location.lat;
-            document.getElementById("txtLongitude").value =
-              result.geometry.location.lng;
-
-            document.getElementById("txtNumero").focus();
-          } else {
-            app.method.mensagem("Endereço não encontrado.");
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          app.method.mensagem("Erro ao buscar o endereço.");
-        });
-    } else {
-      app.method.mensagem("Digite o nome da rua.");
-      document.getElementById("txtEndereco").focus();
-    }
   },
 
   // API ViaCEP
@@ -788,7 +639,7 @@ carrinho.method = {
     document.querySelector("#modalActionsEndereco").classList.add("hidden");
   },
 
-  // edita o endereço do carrinho
+  // remove o endereço do carrinho
   editarEnderecoCarrinho: () => {
     let enderecoAtual = app.method.obterValorSessao("address");
 
@@ -847,6 +698,29 @@ carrinho.method = {
   // carrega as formas de pagamento na tela
   carregarFormasPagamento: (list) => {
     if (list.length > 0) {
+      // antes, valida se tem a forma de pagamento online ativa
+
+      let pagamentoonline = list.filter((e) => {
+        return e.idformapagamento === 5;
+      });
+
+      // existe pagamento online
+
+      if (pagamentoonline.length > 0) {
+        // aculta a opção de 'Como prefere pagar?'
+        document.querySelector("#container-como-pagar").classList.add("hidden");
+        document.getElementById("lblFazerPedido").innerText =
+          "Realizar Pagamento";
+        PAGAMENTO_ONLINE = true;
+      } else {
+        // exibe a opção de 'Como prefere pagar?'
+        document
+          .querySelector("#container-como-pagar")
+          .classList.remove("hidden");
+        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
+        PAGAMENTO_ONLINE = false;
+      }
+
       list.forEach((e, i) => {
         let temp = `<a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">${e.nome}</a>`;
 
@@ -968,7 +842,8 @@ carrinho.method = {
   // botão de realizar o pedido
   fazerPedido: () => {
     if (CARRINHO_ATUAL.length > 0) {
-      // Validações
+      // faz as validações
+
       let checkEntrega = document.querySelector("#chkEntrega").checked;
       let checkRetirada = document.querySelector("#chkRetirada").checked;
 
@@ -977,12 +852,14 @@ carrinho.method = {
         return;
       }
 
-      // Obtém o endereço selecionado do localStorage
+      // obtem o endereco selecionado do localstorage
       let enderecoAtual = app.method.obterValorSessao("address");
+
       if (checkEntrega && enderecoAtual == undefined) {
         app.method.mensagem("Informe o endereço de entrega.");
         return;
       }
+
       let enderecoSelecionado =
         enderecoAtual != undefined ? JSON.parse(enderecoAtual) : null;
 
@@ -993,39 +870,12 @@ carrinho.method = {
         app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
         return;
       }
+
       if (celular.length <= 0) {
         app.method.mensagem("Informe o Celular, por favor.");
         return;
       }
-      if (FORMA_SELECIONADA == null) {
-        app.method.mensagem("Selecione a forma de pagamento.");
-        return;
-      }
 
-      // Tudo ok, prossegue com o pedido
-      app.method.loading(true);
-
-      // Calcula o valor total do pedido
-      let valorTotal = 0;
-      CARRINHO_ATUAL.forEach((item) => {
-        let subtotalItem = item.quantidade * item.valor;
-
-        // Adiciona o valor dos opcionais
-        if (item.opcionais && item.opcionais.length > 0) {
-          item.opcionais.forEach((opcional) => {
-            subtotalItem += item.quantidade * opcional.valoropcional;
-          });
-        }
-
-        valorTotal += subtotalItem;
-      });
-
-      // Adiciona a taxa de entrega (se aplicável)
-      if (checkEntrega) {
-        valorTotal += TAXA_ATUAL;
-      }
-
-      // Cria o objeto `dados`
       var dados = {
         entrega: checkEntrega,
         retirada: checkRetirada,
@@ -1034,51 +884,213 @@ carrinho.method = {
         idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
         idtaxaentrega: TAXA_ATUAL_ID,
         taxaentrega: TAXA_ATUAL,
-        idformapagamento: FORMA_SELECIONADA.idformapagamento,
         troco: TROCO,
         nomecliente: nome,
         telefonecliente: celular,
-        total: valorTotal, // Inclui o valor total calculado
       };
 
-      // Faz a requisição para salvar o pedido
-      app.method.post(
-        "/pedido",
-        JSON.stringify(dados),
-        (response) => {
-          console.log("response", response);
-          app.method.loading(false);
+      // se for pagamento online
+      if (PAGAMENTO_ONLINE) {
+        // seta a forma de pagamento
+        dados.idformapagamento = 5;
 
-          if (response.status === "error") {
-            app.method.mensagem(response.message);
-            return;
-          }
+        // salva a sub order (antes da order) para obter os dados mais tarde
+        app.method.gravarValorSessao(JSON.stringify(dados), "sub-order");
 
-          app.method.mensagem("Pedido realizado!", "green");
+        // avança para a próxima página para selecionar a forma de pagamento
+        window.location.href = "/pagamento.html";
+      } else {
+        // se não for, continua o fluxo normal
 
-          // Salva o novo pedido
-          dados.order = response.order;
-          app.method.gravarValorSessao(JSON.stringify(dados), "order");
+        if (FORMA_SELECIONADA == null) {
+          app.method.mensagem("Selecione a forma de pagamento.");
+          return;
+        }
 
-          setTimeout(() => {
-            // Limpa o carrinho
-            localStorage.removeItem("cart");
-            location.reload();
-          }, 1000);
+        dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
 
-          // Chama a função para finalizar o pedido via WhatsApp
-          carrinho.method.finalizarPedido(dados);
-        },
-        (error) => {
-          console.log("error", error);
-          app.method.loading(false);
-        },
-        true
-      );
+        // tudo ok, faz o pedido
+        app.method.loading(true);
+
+        app.method.post(
+          "/pedido",
+          JSON.stringify(dados),
+          (response) => {
+            console.log("response", response);
+            app.method.loading(false);
+
+            if (response.status === "error") {
+              app.method.mensagem(response.message);
+              return;
+            }
+
+            app.method.mensagem("Pedido realizado!", "green");
+
+            // salva o novo pedido
+            dados.order = response.order;
+
+            app.method.gravarValorSessao(JSON.stringify(dados), "order");
+
+            setTimeout(() => {
+              // limpa o carrinho
+              localStorage.removeItem("cart");
+              window.location.href = "/pedido.html";
+            }, 1000);
+          },
+          (error) => {
+            console.log("error", error);
+            app.method.loading(false);
+          },
+          true
+        );
+      }
     } else {
       app.method.mensagem("Nenhum item no carrinho.");
     }
   },
+
+  // fazerPedido: () => {
+  // 🔒 Evita duplo clique (bloqueio global)
+  //   if (window.pedidoEmAndamento) {
+  //console.log("⚠️ Pedido já está sendo enviado, ignorando segundo clique.");
+  //    return;
+  //   }
+
+  //   if (CARRINHO_ATUAL.length > 0) {
+  // --- Validações (mantém as mesmas)
+  //     let checkEntrega = document.querySelector("#chkEntrega").checked;
+  //     let checkRetirada = document.querySelector("#chkRetirada").checked;
+
+  //    if (!checkEntrega && !checkRetirada) {
+  //      app.method.mensagem("Selecione entrega ou retirada.");
+  //      return;
+  //    }
+
+  //   let enderecoAtual = app.method.obterValorSessao("address");
+  //   if (checkEntrega && enderecoAtual == undefined) {
+  //     app.method.mensagem("Informe o endereço de entrega.");
+  //     return;
+  //   }
+
+  //   let enderecoSelecionado =
+  //     enderecoAtual != undefined ? JSON.parse(enderecoAtual) : null;
+
+  //   let nome = $("#txtNomeSobrenome").val().trim();
+  //    let celular = $("#txtCelular").val().trim();
+
+  //    if (nome.length <= 0) {
+  //      app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
+  //      return;
+  //    }
+  //    if (celular.length <= 0) {
+  //      app.method.mensagem("Informe o Celular, por favor.");
+  //      return;
+  //    }
+  //    if (FORMA_SELECIONADA == null) {
+  //     app.method.mensagem("Selecione a forma de pagamento.");
+  //     return;
+  //   }
+
+  // --- Calcula o total
+  //   let valorTotal = 0;
+  //   CARRINHO_ATUAL.forEach((item) => {
+  //     let subtotalItem = item.quantidade * item.valor;
+  //      if (item.opcionais && item.opcionais.length > 0) {
+  //        item.opcionais.forEach((opcional) => {
+  //          subtotalItem += item.quantidade * opcional.valoropcional;
+  //        });
+  //      }
+  //      valorTotal += subtotalItem;
+  //     });
+
+  //    if (checkEntrega) valorTotal += TAXA_ATUAL;
+
+  // --- Cria o objeto base do pedido
+  //     var dados = {
+  //       entrega: checkEntrega,
+  //       retirada: checkRetirada,
+  //       cart: CARRINHO_ATUAL,
+  //       endereco: enderecoSelecionado,
+  //       idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
+  //       idtaxaentrega: TAXA_ATUAL_ID,
+  //       taxaentrega: TAXA_ATUAL,
+  //       idformapagamento: FORMA_SELECIONADA.idformapagamento,
+  //       troco: TROCO,
+  //       nomecliente: nome,
+  //       telefonecliente: celular,
+  //       total: valorTotal,
+  //     };
+
+  // 🔒 Marca que o pedido está sendo enviado
+  //     window.pedidoEmAndamento = true;
+
+  // 🔘 Desabilita o botão “Finalizar Pedido”
+  //    const btnFinalizar = document.querySelector("#btnFinalizarPedido");
+  //    if (btnFinalizar) {
+  //      btnFinalizar.disabled = true;
+  //      btnFinalizar.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Enviando...`;
+  //    }
+
+  // --- Envia o pedido pro backend
+  //     app.method.loading(true);
+  //     app.method.post(
+  //      "/pedido",
+  //      JSON.stringify(dados),
+  //       (response) => {
+  //         console.log("📥 RESPOSTA BACKEND:", response);
+  //         app.method.loading(false);
+
+  // 🔓 Reativa o botão
+  //         if (btnFinalizar) {
+  //           btnFinalizar.disabled = false;
+  //           btnFinalizar.innerText = "Finalizar Pedido";
+  //         }
+
+  // 🔓 Libera o bloqueio global
+  //         window.pedidoEmAndamento = false;
+
+  //         if (response.status === "error") {
+  //           app.method.mensagem(response.message);
+  //           return;
+  //        }
+
+  //          app.method.mensagem("Pedido realizado com sucesso!", "green");
+
+  // 🔹 Aqui adicionamos o idpedido retornado
+  //         dados.idpedido = response.order.idpedido; // <-- ESSENCIAL
+  //         dados.order = response.order;
+
+  // 🔹 Salva o pedido no localStorage para reabrir depois
+  //         app.method.gravarValorSessao(JSON.stringify(dados), "order");
+
+  // 🔹 Chama o WhatsApp com o link dinâmico
+  //         carrinho.method.finalizarPedido(dados);
+
+  // 🔹 Depois de um pequeno tempo, limpa o carrinho e redireciona pro acompanhamento
+  //         setTimeout(() => {
+  //           localStorage.removeItem("cart");
+  //           window.location.href = `/pedido.html?id=${dados.idpedido}`;
+  //         }, 1500);
+  //       },
+  //       (error) => {
+  //          console.log("❌ ERRO AO SALVAR PEDIDO:", error);
+  //          app.method.loading(false);
+
+  // 🔓 Reativa o botão e o estado
+  //         if (btnFinalizar) {
+  //           btnFinalizar.disabled = false;
+  //           btnFinalizar.innerText = "Finalizar Pedido";
+  //          }
+  //          window.pedidoEmAndamento = false;
+
+  //          app.method.mensagem("Erro ao enviar pedido. Tente novamente.");
+  //       },
+  //       true
+  //      );
+  //    } else {
+  //      app.method.mensagem("Nenhum item no carrinho.");
+  //    }
+  //  },
 
   finalizarPedido: (dados) => {
     let formaDePagamento = "";
@@ -1141,10 +1153,11 @@ carrinho.method = {
     texto += `\n\n💰 *Valor total do pedido:* R$ ${dados.total.toFixed(2)}`;
 
     // 🔗 Link para acompanhar pedido
-    texto += `\n\n📍 *Acompanhe seu pedido:* https://trailerburguer.com.br/pedido.html`;
+    texto += `\n\n📍 *Acompanhe seu pedido:* http://localhost:3000/pedido.html?id=${dados.idpedido}`;
+    texto += `\n\n*Obrigado pela preferência!* 🙏`;
 
     let encode = encodeURIComponent(texto);
-    let url = `https://wa.me/5533999014256?text=${encode}`;
+    let url = `https://wa.me/5533998589550?text=${encode}`;
 
     // ✅ Cria link e simula clique
     let link = document.createElement("a");
@@ -1158,6 +1171,8 @@ carrinho.method = {
       document.body.removeChild(link); // Remove o link após clique
     }, 100); // Atraso mínimo
   },
+
+  // -------------------------------
 };
 
 carrinho.template = {

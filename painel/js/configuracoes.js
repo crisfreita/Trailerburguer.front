@@ -7,25 +7,16 @@ var config = {};
 var TAXA_UNICA_ID = 0;
 var TAXA_DISTANCIA_SELECIONADA = 0;
 
-var CUPOM_PERCENTUAL_ID = 0;
-
 config.event = {
   init: () => {
-    // Só valida token se for painel admin
-    if (window.location.pathname.includes("/painel")) {
-      app.method.validaToken();
-    }
-
-    // Esse pode rodar em qualquer lugar (público)
+    app.method.validaToken();
     app.method.carregarDadosEmpresa();
 
-    // máscara dinheiro
+    // máscara para o campo de dinheiro
     $(".money").mask("#.##0,00", { reverse: true });
 
-    // abre a primeira tab (só faz sentido no painel)
-    if (window.location.pathname.includes("/painel")) {
-      config.method.openTab("delivery-retirada");
-    }
+    // inicia a primeira TAB
+    config.method.openTab("delivery-retirada");
   },
 };
 
@@ -902,19 +893,20 @@ config.method = {
         config.method.changeOpcaoFormaPagamento(
           5,
           "pagamentoonline",
-          pagamentoonline[0].ativo
+          pagamentoonline * -[0].ativo
         );
 
-        // exibe as configurações do MP
-        let publicKey =
-          response.config.publickey !== null ? response.config.publickey : "";
-        let accessToken =
-          response.config.accesstoken !== null
+        // exibe as configurações do mp
+
+        let publickey =
+          response.config.publickey != null ? response.config.publickey : "";
+        let accesstoken =
+          response.config.accesstoken != null
             ? response.config.accesstoken
             : "";
 
-        document.getElementById("txtPublicKey").value = publicKey;
-        document.getElementById("txtAccessToken").value = accessToken;
+        document.querySelector("#txtPublicKey").value = publickey;
+        document.querySelector("#txtAccessToken").value = accesstoken;
       },
       (error) => {
         app.method.loading(false);
@@ -939,10 +931,9 @@ config.method = {
         config.method.salvarOpcaoFormaPagamento(id, true);
       }
 
-      // se for config do Mercado Pago
-      if (id === 5) {
+      if (id == 5) {
         document
-          .getElementById("container-config-mp")
+          .querySelector("container-config-mp")
           .classList.remove("hidden");
       }
     } else {
@@ -951,10 +942,6 @@ config.method = {
       // valida se é o click no botão
       if (isCheck == undefined) {
         config.method.salvarOpcaoFormaPagamento(id, false);
-      }
-
-      if (id === 5) {
-        document.getElementById("container-config-mp").classList.add("hidden");
       }
     }
   },
@@ -988,38 +975,37 @@ config.method = {
     );
   },
 
-  // salva as configurações do Mercado Pago
   salvarConfigMP: () => {
-    let publicKey = document.getElementById("txtPublicKey").value.trim();
-    let accessToken = document.getElementById("txtAccessToken").value.trim();
+    let publickey = document.querySelector("txtPublicKey").value.trim();
+    let accesstoken = document.querySelector("txtAccessToken").value.trim();
 
-    if (publicKey.length <= 0) {
-      app.method.mensagem("Informe o Public Key, por favor.");
+    if (publickey.length <= 0) {
+      app.method.mensagem("Informe a Public Key do Mercado Pago.");
       document.getElementById("txtPublicKey").focus();
       return;
     }
 
-    if (accessToken.length <= 0) {
-      app.method.mensagem("Informe o Access Token, por favor.");
+    if (accesstoken.length <= 0) {
+      app.method.mensagem("Informe a Public Key do Mercado Pago.");
       document.getElementById("txtAccessToken").focus();
       return;
     }
 
     let dados = {
-      publicKey: publicKey,
-      accessToken: accessToken,
+      publickey: publickey,
+      accesstoken: accesstoken,
     };
 
     app.method.loading(true);
 
     app.method.post(
-      "/formapagamento/salvar/mercadopago",
+      "/formapagamento/salvar/configmp",
       JSON.stringify(dados),
       (response) => {
         console.log("response", response);
         app.method.loading(false);
 
-        if (response.status === "error") {
+        if (response.status == "error") {
           app.method.mensagem(response.message);
           return;
         }
@@ -1032,314 +1018,7 @@ config.method = {
       }
     );
   },
-
-  // CUPOM DE DESCONTO //
-
-  listarCupomDescontoPercentual: () => {
-    app.method.get(
-      "/cupomdesconto/percentual",
-      (response) => {
-        app.method.loading(false);
-
-        if (response.status === "error") {
-          app.method.mensagem(response.message);
-          return;
-        }
-
-        const inputs = {
-          percentual: document.querySelector("#txtCupomPercentual"),
-          minimo: document.querySelector("#txtValorMinimoCupomPercentual"),
-          validade: document.querySelector("#txtCupomValidadePercentual"),
-        };
-
-        if (response.data.length > 0) {
-          const cupom = response.data[0];
-          CUPOM_PERCENTUAL_ID = cupom.idcupom;
-
-          inputs.percentual.value = parseFloat(cupom.valor).toFixed(0);
-          inputs.minimo.value = parseFloat(cupom.valor_minimo)
-            .toFixed(2)
-            .toString()
-            .replace(".", ",");
-          inputs.validade.value = cupom.validade.split("T")[0];
-        } else {
-          // 🔻 LIMPA os campos se não houver cupom
-          CUPOM_PERCENTUAL_ID = 0;
-          inputs.percentual.value = "";
-          inputs.minimo.value = "";
-          inputs.validade.value = "";
-        }
-      },
-      (error) => {
-        app.method.loading(false);
-        console.log("Erro ao carregar cupom percentual:", error);
-      }
-    );
-  },
-
-  salvarCupomDescontoPercentual: () => {
-    let valor = parseFloat(
-      document.querySelector("#txtCupomPercentual").value.trim()
-    );
-    let valorMinimo = document
-      .querySelector("#txtValorMinimoCupomPercentual")
-      .value.replace(/\./g, "")
-      .replace(",", ".");
-    let validade = document.querySelector("#txtCupomValidadePercentual").value;
-
-    if (isNaN(valor) || valor <= 0 || valor > 100) {
-      app.method.mensagem("Informe um percentual entre 1% e 100%.");
-      return;
-    }
-
-    if (!validade) {
-      app.method.mensagem("Informe a data de validade.");
-      return;
-    }
-
-    const dados = {
-      idcupom: CUPOM_PERCENTUAL_ID || 0,
-      tipo: "percentual",
-      valor: valor,
-      valor_minimo: parseFloat(valorMinimo) || 0,
-      validade: validade,
-    };
-
-    app.method.loading(true);
-
-    app.method.post(
-      "/cupomdesconto/percentual",
-      JSON.stringify(dados),
-      (response) => {
-        app.method.loading(false);
-
-        if (response.status === "error") {
-          app.method.mensagem(response.message);
-          return;
-        }
-
-        app.method.mensagem(response.message, "green");
-        config.method.listarCupomDescontoPercentual();
-      },
-      (error) => {
-        app.method.loading(false);
-        console.log("Erro ao salvar cupom percentual:", error);
-      }
-    );
-  },
-
-  listarCupomDesconto: () => {
-    app.method.get(
-      "/cupomdesconto/valor",
-      (response) => {
-        app.method.loading(false);
-
-        const inputs = {
-          valor: document.querySelector("#txtCupomValor"),
-          codigo: document.querySelector("#txtCupomCodigo"),
-          minimo: document.querySelector("#txtValorMinimoCupom"),
-          validade: document.querySelector("#txtCupomValidade"),
-        };
-
-        if (response.status === "error") {
-          app.method.mensagem(response.message);
-          return;
-        }
-
-        if (response.data.length > 0) {
-          const cupom = response.data[0];
-          CUPOM_VALOR_ID = cupom.idcupom;
-
-          inputs.valor.value = parseFloat(cupom.valor)
-            .toFixed(2)
-            .replace(".", ",");
-          inputs.codigo.value = cupom.codigo;
-          inputs.minimo.value = parseFloat(cupom.valor_minimo)
-            .toFixed(2)
-            .replace(".", ",");
-          inputs.validade.value = cupom.validade.split("T")[0];
-        } else {
-          // 🔻 LIMPA os campos se não houver cupom
-          CUPOM_VALOR_ID = 0;
-          inputs.valor.value = "";
-          inputs.codigo.value = "";
-          inputs.minimo.value = "";
-          inputs.validade.value = "";
-        }
-      },
-      (error) => {
-        app.method.loading(false);
-        console.log("Erro ao carregar cupom valor:", error);
-      }
-    );
-  },
-
-  salvarCupomDesconto: () => {
-    let valor = document
-      .querySelector("#txtCupomValor")
-      .value.replace(/\./g, "")
-      .replace(",", ".")
-      .replace("R$", "")
-      .trim();
-    let codigo = document.querySelector("#txtCupomCodigo").value.trim();
-    let valorMinimo = document
-      .querySelector("#txtValorMinimoCupom")
-      .value.replace(/\./g, "")
-      .replace(",", ".");
-    let validade = document.querySelector("#txtCupomValidade").value;
-
-    if (!codigo) {
-      app.method.mensagem("Informe o código do cupom.");
-      return;
-    }
-
-    if (isNaN(valor) || parseFloat(valor) <= 0) {
-      app.method.mensagem("Informe um valor de desconto válido.");
-      return;
-    }
-
-    const dados = {
-      tipo: "valor",
-      valor: parseFloat(valor),
-      codigo: codigo,
-      valor_minimo: parseFloat(valorMinimo) || 0,
-      validade: validade,
-    };
-
-    app.method.loading(true);
-
-    app.method.post(
-      "/cupomdesconto/valor",
-      JSON.stringify(dados),
-      (res) => {
-        app.method.loading(false);
-        if (res.status === "error") {
-          app.method.mensagem(res.message);
-          return;
-        }
-        app.method.mensagem(res.message, "green");
-      },
-      (err) => {
-        app.method.loading(false);
-        console.log("Erro ao salvar cupom em reais:", err);
-      },
-      true // <- Adicionado aqui para passar o token corretamente
-    );
-  },
-
-  listarCuponsCadastrados: () => {
-    app.method.get(
-      "/cupomdesconto/listar",
-      (response) => {
-        console.log("🔍 RESPOSTA DA API:", response); // 👈 ADICIONE ISTO
-        if (response.status === "error") {
-          app.method.mensagem(response.message);
-          return;
-        }
-
-        const tbody = document.querySelector("#listaCuponsCadastrados");
-        tbody.innerHTML = "";
-
-        response.data.forEach((cupom) => {
-          const html = app.method.parse(config.template.cupomdesconto, {
-            idcupom: cupom.idcupom,
-            codigo: cupom.codigo || "--",
-            tipo: cupom.tipo === "percentual" ? "%" : "R$",
-            valor:
-              cupom.tipo === "percentual"
-                ? `${parseFloat(cupom.valor).toFixed(0)}%`
-                : `R$ ${parseFloat(cupom.valor).toFixed(2)}`,
-            valorminimo: `R$ ${parseFloat(cupom.valor_minimo).toFixed(2)}`,
-            validade: (cupom.validade || "").split("T")[0],
-            ativo: cupom.ativo,
-          });
-
-          const tr = document.createElement("tr");
-          tr.innerHTML = html;
-          tbody.appendChild(tr);
-        });
-      },
-      (err) => {
-        console.log("Erro ao listar cupons:", err);
-      }
-    );
-  },
-
-  removerCupomDescontoPercentual: () => {
-    if (!confirm("Tem certeza que deseja apagar o cupom percentual?")) return;
-
-    app.method.loading(true);
-
-    app.method.post(
-      "/cupomdesconto/remover",
-      JSON.stringify({ idcupom: CUPOM_PERCENTUAL_ID }),
-      (res) => {
-        app.method.loading(false);
-        if (res.status === "success") {
-          app.method.mensagem(
-            "Cupom percentual removido com sucesso.",
-            "green"
-          );
-          config.method.listarCupomDescontoPercentual();
-          config.method.listarTodosCupons();
-          CUPOM_PERCENTUAL_ID = 0;
-
-          // 🔻 Limpa os campos do formulário
-          document.querySelector("#txtCupomPercentual").value = "";
-          document.querySelector("#txtValorMinimoCupomPercentual").value = "";
-          document.querySelector("#txtCupomValidadePercentual").value = "";
-        } else {
-          app.method.mensagem(res.message);
-        }
-      },
-      (err) => {
-        app.method.loading(false);
-        console.log("Erro ao remover cupom percentual:", err);
-      }
-    );
-  },
-
-  removerCupomDesconto: () => {
-    if (!confirm("Tem certeza que deseja apagar o cupom em reais?")) return;
-
-    if (!CUPOM_VALOR_ID || CUPOM_VALOR_ID === 0) {
-      app.method.mensagem("Nenhum cupom em reais carregado para remoção.");
-      return;
-    }
-
-    console.log("ID do cupom que será removido:", CUPOM_VALOR_ID); // debug opcional
-
-    app.method.loading(true);
-
-    app.method.post(
-      "/cupomdesconto/remover",
-      JSON.stringify({ idcupom: CUPOM_VALOR_ID }),
-      (res) => {
-        app.method.loading(false);
-        if (res.status === "success") {
-          app.method.mensagem("Cupom removido com sucesso.", "green");
-
-          CUPOM_VALOR_ID = 0; // ✅ zera o ID para evitar reutilização
-
-          config.method.listarCupomDesconto(); // recarrega o campo vazio
-          config.method.listarTodosCupons(); // atualiza a tabela/lista
-        } else {
-          app.method.mensagem(res.message);
-        }
-      },
-      (err) => {
-        app.method.loading(false);
-        console.log("Erro ao remover cupom:", err);
-      }
-    );
-  },
 };
-
-// Chamar o carregamento do cupom assim que a página terminar de carregar
-window.addEventListener("DOMContentLoaded", () => {
-  config.method.listarCupomDescontoPercentual();
-  config.method.listarCupomDesconto();
-});
 
 config.template = {
   taxadistancia: `
@@ -1356,28 +1035,6 @@ config.template = {
                     <div class="dropdown-menu">
                         \${acoes}
                         <a class="dropdown-item color-red" href="#" onclick="config.method.abrirModalRemoverTaxaDistancia('\${idtaxaentrega}')">
-                            <i class="fas fa-trash-alt"></i>&nbsp; <b>Remover</b>
-                        </a>
-                    </div>
-                </div>
-            </td>
-        </tr>
-    `,
-
-  cupomdesconto: `
-        <tr>
-            <td>\${codigo}</td>
-            <td>\${tipo}</td>
-            <td>\${valor}</td>
-            <td>\${valor_minimo}</td>
-            <td>\${validade}</td>
-            <td>
-                <div class="dropdown">
-                    <button class="btn btn-white btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item color-red" href="#" onclick="config.method.removerCupomDesconto('\${codigo}')">
                             <i class="fas fa-trash-alt"></i>&nbsp; <b>Remover</b>
                         </a>
                     </div>
