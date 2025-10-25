@@ -21,10 +21,51 @@ pagamento.event = {
       window.location.href = "/index.html";
     }
 
-    // obter o total do carrinho
+    // obter o total do carrinho e depois os dados do MP
     pagamento.method.obterTotalCarrinho(pagamento.method.obterDadosMP);
 
-    // obter os dados do MP (publickKey)
+    // ==============================
+    // 🔁 Restaura PIX salvo no navegador (caso recarregue)
+    // ==============================
+    const pixId = localStorage.getItem("pix_id");
+    const pixQr = localStorage.getItem("pix_qr");
+    const pixTicket = localStorage.getItem("pix_ticket");
+    const pixText = localStorage.getItem("pix_text");
+
+    if (pixId && pixQr) {
+      // monta o mesmo HTML do modal PIX
+      let html = `
+        <div class="text-center">
+          <h5 class="mb-3">Escaneie o QR Code para pagar</h5>
+          <img src="data:image/png;base64,${pixQr}" width="220" class="border p-2 rounded shadow-sm" />
+          
+          <p style="font-size:14px;margin-top:15px;">Ou copie o código PIX abaixo:</p>
+
+          <div class="input-group mt-2 mb-3">
+            <textarea id="pixCode" readonly class="form-control text-center" rows="3">${pixText}</textarea>
+            <button class="btn btn-success" type="button" 
+              onclick="navigator.clipboard.writeText('${pixText}'); app.method.mensagem('Código PIX copiado!','green')">
+              <i class="fas fa-copy"></i> Copiar
+            </button>
+          </div>
+
+          <p class="mt-2 text-warning"><b>Aguardando pagamento...</b></p>
+
+          <a href="${pixTicket}" target="_blank" class="btn btn-primary mt-3">
+            <i class="fas fa-external-link-alt"></i> Abrir no Mercado Pago
+          </a>
+        </div>
+      `;
+
+      app.method.exibirModalCustom("Pagamento PIX", html);
+
+      // reinicia o monitoramento automático
+      pagamento.method.iniciarVerificacaoPix();
+    }
+
+    // ==============================
+    // Fim da restauração automática do PIX
+    // ==============================
   },
 };
 
@@ -215,30 +256,37 @@ pagamento.method = {
           return;
         }
 
-        // 💰 Se for PIX — exibe o QR Code
+        // 💰 Se for PIX — exibe o QR Code e salva localmente
         if (response.qr_code_base64) {
+          // 🔹 Salva dados do PIX no navegador
+          localStorage.setItem("pix_id", response.id_mp);
+          localStorage.setItem("pix_qr", response.qr_code_base64);
+          localStorage.setItem("pix_ticket", response.ticket_url);
+          localStorage.setItem("pix_text", response.qr_code_text);
+          localStorage.setItem("pix_status", response.status_mp || "pending");
+
           let html = `
-          <div class="text-center">
-            <h5 class="mb-3">Escaneie o QR Code para pagar</h5>
-            <img src="data:image/png;base64,${response.qr_code_base64}" width="220" class="border p-2 rounded shadow-sm" />
-            
-            <p style="font-size:14px;margin-top:15px;">Ou copie o código PIX abaixo:</p>
+        <div class="text-center">
+          <h5 class="mb-3">Escaneie o QR Code para pagar</h5>
+          <img src="data:image/png;base64,${response.qr_code_base64}" width="220" class="border p-2 rounded shadow-sm" />
+          
+          <p style="font-size:14px;margin-top:15px;">Ou copie o código PIX abaixo:</p>
 
-            <div class="input-group mt-2 mb-3">
-              <textarea id="pixCode" readonly class="form-control text-center" rows="3">${response.qr_code_text}</textarea>
-              <button class="btn btn-success" type="button" 
-                onclick="navigator.clipboard.writeText('${response.qr_code_text}'); app.method.mensagem('Código PIX copiado!','green')">
-                <i class="fas fa-copy"></i> Copiar
-              </button>
-            </div>
-
-            <p class="mt-2 text-muted">Tempo restante para pagar: <b id="tempoPix">5:00</b></p>
-
-            <a href="${response.ticket_url}" target="_blank" class="btn btn-primary mt-3">
-              <i class="fas fa-external-link-alt"></i> Abrir no Mercado Pago
-            </a>
+          <div class="input-group mt-2 mb-3">
+            <textarea id="pixCode" readonly class="form-control text-center" rows="3">${response.qr_code_text}</textarea>
+            <button class="btn btn-success" type="button" 
+              onclick="navigator.clipboard.writeText('${response.qr_code_text}'); app.method.mensagem('Código PIX copiado!','green')">
+              <i class="fas fa-copy"></i> Copiar
+            </button>
           </div>
-        `;
+
+          <p class="mt-2 text-muted">Tempo restante para pagar: <b id="tempoPix">5:00</b></p>
+
+          <a href="${response.ticket_url}" target="_blank" class="btn btn-primary mt-3">
+            <i class="fas fa-external-link-alt"></i> Abrir no Mercado Pago
+          </a>
+        </div>
+      `;
 
           app.method.exibirModalCustom("Pagamento PIX", html);
 
@@ -263,6 +311,9 @@ pagamento.method = {
             }
           }, 1000);
 
+          // 🔁 Inicia verificação automática de status
+          pagamento.method.iniciarVerificacaoPix();
+
           return;
         }
 
@@ -272,6 +323,7 @@ pagamento.method = {
             "✅ Pagamento aprovado! Seu pedido foi confirmado.",
             "green"
           );
+          localStorage.clear();
           setTimeout(() => {
             window.location.href = "/pedido.html";
           }, 2000);
@@ -297,7 +349,7 @@ pagamento.method = {
           response.status_mp === "failure"
         ) {
           app.method.mensagem(
-            "❌ Pagamento recusado! Verifique os dados do cartão e tente novamente.",
+            "❌ Pagamento recusado! Verifique os dados e tente novamente.",
             "red"
           );
           return;
@@ -319,6 +371,35 @@ pagamento.method = {
       },
       true
     );
+  },
+
+  iniciarVerificacaoPix: () => {
+    const id = localStorage.getItem("pix_id");
+    if (!id) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/pagamento/status/${id}`);
+        const data = await res.json();
+
+        console.log("🔄 Verificando status PIX:", data);
+
+        if (data.status === "approved") {
+          clearInterval(interval);
+          localStorage.clear();
+
+          app.method.mensagem(
+            "✅ Pagamento aprovado! Pedido confirmado.",
+            "green"
+          );
+          setTimeout(() => {
+            window.location.href = "/pedido.html";
+          }, 2000);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar PIX:", err);
+      }
+    }, 10000); // a cada 10 segundos
   },
 
   // === CARTÕES SALVOS ===
