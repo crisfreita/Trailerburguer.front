@@ -325,10 +325,13 @@ pagamento.method = {
             "green"
           );
 
-          const subOrderData = app.method.obterValorSessao("sub-order");
-          if (subOrderData) {
-            const dados = JSON.parse(subOrderData);
+          const dados = pagamento.method.getDadosPedidoCompleto();
+          if (dados) {
             pagamento.method.enviarPedidoWhatsApp(dados);
+          } else {
+            console.warn(
+              "❌ Nenhum dado de pedido encontrado para enviar ao WhatsApp."
+            );
           }
 
           localStorage.clear();
@@ -399,10 +402,13 @@ pagamento.method = {
         if (data.payment_status === "approved" || data.status === "approved") {
           clearInterval(interval);
 
-          const subOrderData = app.method.obterValorSessao("sub-order");
-          if (subOrderData) {
-            const dados = JSON.parse(subOrderData);
+          const dados = pagamento.method.getDadosPedidoCompleto();
+          if (dados) {
             pagamento.method.enviarPedidoWhatsApp(dados);
+          } else {
+            console.warn(
+              "❌ Nenhum dado de pedido encontrado para enviar ao WhatsApp."
+            );
           }
 
           // 🔹 Limpa PIX ID e carrinho/suborder
@@ -537,6 +543,41 @@ pagamento.method = {
       },
       true
     );
+  },
+
+  getDadosPedidoCompleto: () => {
+    // tenta pegar o pedido salvo na sessão (mantido pelo carrinho)
+    let dadosPedido = null;
+
+    try {
+      const subOrderData =
+        app.method.obterValorSessao("sub-order") ||
+        sessionStorage.getItem("sub-order") ||
+        localStorage.getItem("sub-order");
+
+      if (subOrderData) {
+        dadosPedido = JSON.parse(subOrderData);
+      }
+    } catch (e) {
+      console.warn("⚠️ Falha ao carregar sub-order:", e);
+    }
+
+    // valida se tem os dados essenciais
+    if (
+      !dadosPedido ||
+      !dadosPedido.cart ||
+      !dadosPedido.nomecliente ||
+      !dadosPedido.telefonecliente
+    ) {
+      console.warn(
+        "⚠️ Dados do pedido incompletos. Tentando recuperar do carrinho..."
+      );
+      const cartData = localStorage.getItem("cart");
+      if (cartData)
+        dadosPedido = { ...dadosPedido, cart: JSON.parse(cartData) };
+    }
+
+    return dadosPedido;
   },
 
   enviarPedidoWhatsApp: () => {
