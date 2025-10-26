@@ -551,7 +551,7 @@ pagamento.method = {
             <p>Seu pedido foi confirmado com sucesso 🍕</p>
             <p class="text-muted mb-3">Obrigado por comprar na <b>Trailer Burguer</b></p>
 
-            <p class="text-muted mb-3">Para finalizar o pedido envie para o <b>WhatsApp</b></p>
+            <p class="text-muted mb-3">Para finalizar o pedido envie o PEDIDO para o <b>WhatsApp</b></p>
 
             <a href="${linkWhatsApp}" target="_blank" class="btn btn-success w-100 mt-2">
               <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
