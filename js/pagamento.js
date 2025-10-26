@@ -388,11 +388,18 @@ pagamento.method = {
 
         console.log("🔄 Verificando status PIX:", data);
 
+        // ✅ Pagamento aprovado
         if (data.payment_status === "approved" || data.status === "approved") {
           clearInterval(interval);
-          localStorage.removeItem("pix_id");
 
-          // ✅ Substitui o conteúdo do modal pelo comprovante visual
+          // 🔹 Limpa PIX ID e carrinho/suborder
+          localStorage.removeItem("pix_id");
+          localStorage.removeItem("sub-order");
+          localStorage.removeItem("carrinho");
+          sessionStorage.removeItem("sub-order");
+          sessionStorage.removeItem("carrinho");
+
+          // ✅ Mostra modal de confirmação
           const html = `
           <div class="text-center p-3">
             <i class="fas fa-check-circle text-success" style="font-size:60px;"></i>
@@ -403,14 +410,16 @@ pagamento.method = {
         `;
           app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
 
-          // ⏳ redireciona após 3 segundos
+          // ⏳ Redireciona após 3 segundos
           setTimeout(() => {
             window.location.href = "/pedido.html";
           }, 3000);
-        } else if (data.status === "rejected") {
+        }
+
+        // ❌ Pagamento recusado
+        else if (data.status === "rejected") {
           clearInterval(interval);
           localStorage.removeItem("pix_id");
-
           app.method.mensagem("❌ Pagamento recusado. Tente novamente.", "red");
         }
       } catch (err) {
