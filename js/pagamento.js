@@ -402,38 +402,94 @@ pagamento.method = {
         if (data.payment_status === "approved" || data.status === "approved") {
           clearInterval(interval);
 
-          const dados = pagamento.method.getDadosPedidoCompleto();
-          if (dados) {
-            pagamento.method.enviarPedidoWhatsApp(dados);
-          } else {
-            console.warn(
-              "❌ Nenhum dado de pedido encontrado para enviar ao WhatsApp."
-            );
+          // 🔹 Busca dados completos do pedido (session/localStorage)
+          const subOrderData =
+            app.method.obterValorSessao("sub-order") ||
+            sessionStorage.getItem("sub-order") ||
+            localStorage.getItem("sub-order");
+
+          let dados = null;
+          if (subOrderData) {
+            try {
+              dados = JSON.parse(subOrderData);
+            } catch (e) {
+              console.warn("⚠️ Falha ao ler dados do pedido:", e);
+            }
           }
 
-          // 🔹 Limpa PIX ID e carrinho/suborder
-          localStorage.removeItem("pix_id");
-          localStorage.removeItem("sub-order");
-          localStorage.removeItem("carrinho");
-          sessionStorage.removeItem("sub-order");
-          sessionStorage.removeItem("carrinho");
+          // 🔹 Gera link do WhatsApp com informações do pedido
+          let texto = `*Olá! Me chamo ${
+            dados?.nomecliente || ""
+          }, acabei de fazer um pedido pago via PIX!*`;
+          texto += `\n📞 Contato: *${dados?.telefonecliente || ""}*`;
+          texto += `\n\n🛒 *Itens do pedido:*`;
 
-          // ✅ Mostra modal de confirmação
+          if (dados?.cart?.length > 0) {
+            dados.cart.forEach((item) => {
+              let subtotalItem = item.quantidade * item.valor;
+              texto += `\n\n━━━━━━━━━━━━━━━━━━━━`;
+              texto += `\n*${item.quantidade}x ${item.nome}*`;
+              texto += `\n💵 Subtotal: R$ ${subtotalItem.toFixed(2)}`;
+
+              if (item.opcionais?.length > 0) {
+                texto += `\n➕ *Opcionais:*`;
+                item.opcionais.forEach((op) => {
+                  texto += `\n  - ${item.quantidade}x ${
+                    op.nomeopcional
+                  } (+ R$ ${(item.quantidade * op.valoropcional).toFixed(2)})`;
+                });
+              }
+
+              if (item.observacao?.trim()) {
+                texto += `\n📝 *Observação:* ${item.observacao}`;
+              }
+            });
+          }
+
+          texto += `\n\n━━━━━━━━━━━━━━━━━━━━`;
+          texto += `\n💳 *Forma de pagamento:* PIX (Aprovado ✅)`;
+
+          if (dados?.retirada) {
+            texto += `\n🏃‍♂️ *Retirada no local*`;
+          } else {
+            texto += `\n🚚 *Entrega*`;
+            if (dados?.endereco) {
+              texto += `\n📍 *Endereço:* ${dados.endereco.endereco}, ${dados.endereco.numero} - ${dados.endereco.bairro}, ${dados.endereco.cidade} - ${dados.endereco.estado}`;
+            }
+            texto += `\n📦 *Taxa de entrega:* R$ ${
+              dados?.taxaentrega?.toFixed(2) || 0
+            }`;
+          }
+
+          texto += `\n\n💰 *Total:* R$ ${dados?.total?.toFixed(2) || 0}`;
+          texto += `\n\n*Obrigado por comprar na Pizzaria Maluca!* 🍕`;
+
+          const encode = encodeURIComponent(texto);
+          const linkWhatsApp = `https://wa.me/5533999694795?text=${encode}`;
+
+          // 🔹 Mostra modal com botão WhatsApp
           const html = `
           <div class="text-center p-3">
             <i class="fas fa-check-circle text-success" style="font-size:60px;"></i>
             <h4 class="mt-3 text-success">Pagamento aprovado!</h4>
             <p>Seu pedido foi confirmado com sucesso 🍕</p>
-            <p class="text-muted mb-2">Obrigado por comprar na <b>Pizzaria Maluca</b></p>
+            <p class="text-muted mb-3">Obrigado por comprar na <b>Pizzaria Maluca</b></p>
+
+            <a href="${linkWhatsApp}" target="_blank" class="btn btn-success w-100 mt-2">
+              <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
+            </a>
+
+            <button onclick="window.location.href='/pedido.html'" class="btn btn-primary w-100 mt-2">
+              <i class="fas fa-list"></i> Ver pedido
+            </button>
           </div>
         `;
           app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
 
-          // ⏳ Redireciona após 3 segundos
-          localStorage.clear();
-          setTimeout(() => {
-            window.location.href = "/pedido.html";
-          }, 9000);
+          // 🔹 Limpa storage (mantém só o pedido)
+          localStorage.removeItem("pix_id");
+          localStorage.removeItem("carrinho");
+          sessionStorage.removeItem("carrinho");
         }
 
         // ❌ Pagamento recusado
@@ -447,6 +503,70 @@ pagamento.method = {
       }
     }, 7000); // verifica a cada 7 segundos
   },
+
+  // iniciarVerificacaoPix: () => {
+  //   const id = localStorage.getItem("pix_id");
+  //   if (!id) return;
+
+  //    console.log("🕓 Iniciando verificação PIX ID:", id);
+
+  //    const interval = setInterval(async () => {
+  ////     try {
+  //      const res = await fetch(`/pagamento/status/${id}`);
+  //      if (!res.ok) return;
+  //      const data = await res.json();
+
+  //       console.log("🔄 Verificando status PIX:", data);
+
+  // ✅ Pagamento aprovado
+  //       if (data.payment_status === "approved" || data.status === "approved") {
+  //         clearInterval(interval);
+
+  //       const dados = pagamento.method.getDadosPedidoCompleto();
+  //      if (dados) {
+  //         pagamento.method.enviarPedidoWhatsApp(dados);
+  //       } else {
+  //         console.warn(
+  //           "❌ Nenhum dado de pedido encontrado para enviar ao WhatsApp."
+  //         );
+  //       }
+
+  // 🔹 Limpa PIX ID e carrinho/suborder
+  //        localStorage.removeItem("pix_id");
+  //        localStorage.removeItem("sub-order");
+  //       localStorage.removeItem("carrinho");
+  //       sessionStorage.removeItem("sub-order");
+  //       sessionStorage.removeItem("carrinho");
+
+  // ✅ Mostra modal de confirmação
+  //        const html = `
+  //       <div class="text-center p-3">
+  //         <i class="fas fa-check-circle text-success" style="font-size:60px;"></i>
+  //         <h4 class="mt-3 text-success">Pagamento aprovado!</h4>
+  //         <p>Seu pedido foi confirmado com sucesso 🍕</p>
+  //         <p class="text-muted mb-2">Obrigado por comprar na <b>Pizzaria Maluca</b></p>
+  //      </div>
+  //     `;
+  //       app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
+
+  // ⏳ Redireciona após 3 segundos
+  //       localStorage.clear();
+  //        setTimeout(() => {
+  //          window.location.href = "/pedido.html";
+  //        }, 9000);
+  //     }
+
+  // ❌ Pagamento recusado
+  //       else if (data.status === "rejected") {
+  //       clearInterval(interval);
+  //         localStorage.removeItem("pix_id");
+  //         app.method.mensagem("❌ Pagamento recusado. Tente novamente.", "red");
+  //       }
+  //    } catch (err) {
+  //       console.error("❌ Erro ao verificar PIX:", err);
+  //    }
+  //   }, 7000); // verifica a cada 7 segundos
+  //  },
 
   // === CARTÕES SALVOS ===
   carregarCartoesSalvos: () => {
