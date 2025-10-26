@@ -324,6 +324,9 @@ pagamento.method = {
             "✅ Pagamento aprovado! Seu pedido foi confirmado.",
             "green"
           );
+
+          // 🔥 Envia automaticamente o pedido para o WhatsApp
+          pagamento.method.enviarPedidoWhatsApp();
           localStorage.clear();
           setTimeout(() => {
             window.location.href = "/pedido.html";
@@ -409,6 +412,9 @@ pagamento.method = {
           </div>
         `;
           app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
+
+          // 🔥 Envia automaticamente o pedido para o WhatsApp
+          pagamento.method.enviarPedidoWhatsApp();
 
           // ⏳ Redireciona após 3 segundos
           localStorage.clear();
@@ -524,5 +530,87 @@ pagamento.method = {
       },
       true
     );
+  },
+
+  enviarPedidoWhatsApp: () => {
+    const subOrderData = app.method.obterValorSessao("sub-order");
+    if (!subOrderData) return;
+
+    const dados = JSON.parse(subOrderData);
+    let formaDePagamento = "";
+
+    switch (dados.idformapagamento) {
+      case 1:
+        formaDePagamento = "PIX";
+        break;
+      case 2:
+        formaDePagamento = "DINHEIRO";
+        break;
+      case 3:
+        formaDePagamento = "CARTÃO DE CRÉDITO";
+        break;
+      case 4:
+        formaDePagamento = "CARTÃO DE DÉBITO";
+        break;
+      default:
+        formaDePagamento = "Não especificado";
+    }
+
+    let texto = `*Olá! Me chamo ${dados.nomecliente}, gostaria de confirmar meu pedido:*`;
+    texto += `\n📞 Contato: *${dados.telefonecliente}*`;
+    texto += `\n\n🛒 *Itens do pedido:*`;
+
+    dados.cart.forEach((item) => {
+      let subtotalItem = item.quantidade * item.valor;
+
+      texto += `\n\n━━━━━━━━━━━━━━━━━━━━`;
+      texto += `\n*${item.quantidade}x ${item.nome}*`;
+      texto += `\n💵 Subtotal: R$ ${subtotalItem.toFixed(2)}`;
+
+      if (item.opcionais?.length) {
+        texto += `\n➕ *Opcionais:*`;
+        item.opcionais.forEach((op) => {
+          texto += `\n  - ${item.quantidade}x ${op.nomeopcional} (+ R$ ${(
+            item.quantidade * op.valoropcional
+          ).toFixed(2)})`;
+        });
+      }
+
+      if (item.observacao?.trim()) {
+        texto += `\n📝 *Observação:* ${item.observacao}`;
+      }
+    });
+
+    texto += `\n\n━━━━━━━━━━━━━━━━━━━━`;
+    texto += `\n💳 *Forma de pagamento:* ${formaDePagamento}`;
+
+    if (dados.retirada) {
+      texto += `\n🏃‍♂️ *Retirada no local*`;
+    } else {
+      texto += `\n🚚 *Entrega*`;
+      if (dados.endereco) {
+        texto += `\n📍 *Endereço:* ${dados.endereco.endereco}, ${dados.endereco.numero} - ${dados.endereco.bairro}, ${dados.endereco.cidade} - ${dados.endereco.estado}`;
+      }
+      texto += `\n📦 *Taxa de entrega:* R$ ${dados.taxaentrega.toFixed(2)}`;
+    }
+
+    texto += `\n\n💰 *Total:* R$ ${dados.total.toFixed(2)}`;
+    texto += `\n\n📍 *Acompanhe seu pedido:* https://www.trailerburguer.com.br/pedido.html?id=${dados.idpedido}`;
+    texto += `\n\n✅ *Pagamento confirmado via PIX!* 💥`;
+    texto += `\n\n*Obrigado pela preferência!* 🙏`;
+
+    let encode = encodeURIComponent(texto);
+    let url = `https://wa.me/5533998589550?text=${encode}`;
+
+    // ✅ Simula clique para abrir o WhatsApp
+    let link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    setTimeout(() => {
+      link.click();
+      document.body.removeChild(link);
+    }, 100);
   },
 };
