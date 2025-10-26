@@ -473,7 +473,7 @@ pagamento.method = {
             <i class="fas fa-check-circle text-success" style="font-size:60px;"></i>
             <h4 class="mt-3 text-success">Pagamento aprovado!</h4>
             <p>Seu pedido foi confirmado com sucesso 🍕</p>
-            <p class="text-muted mb-3">Obrigado por comprar na <b>Pizzaria Maluca</b></p>
+            <p class="text-muted mb-3">Obrigado por comprar na <b>Trailer Burguer</b></p>
 
             <a href="${linkWhatsApp}" target="_blank" class="btn btn-success w-100 mt-2">
               <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
