@@ -311,7 +311,8 @@ pagamento.method = {
             }
           }, 1000);
 
-          // 🔁 Inicia verificação automática de status
+          // 🔁 Inicia verificação automática de
+          localStorage.setItem("pix_id", response.id_mp);
           pagamento.method.iniciarVerificacaoPix();
 
           return;
@@ -377,29 +378,45 @@ pagamento.method = {
     const id = localStorage.getItem("pix_id");
     if (!id) return;
 
+    console.log("🕓 Iniciando verificação PIX ID:", id);
+
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/pagamento/status/${id}`);
+        if (!res.ok) return;
         const data = await res.json();
 
         console.log("🔄 Verificando status PIX:", data);
 
-        if (data.status === "approved") {
+        if (data.payment_status === "approved" || data.status === "approved") {
           clearInterval(interval);
-          localStorage.clear();
+          localStorage.removeItem("pix_id");
 
-          app.method.mensagem(
-            "✅ Pagamento aprovado! Pedido confirmado.",
-            "green"
-          );
+          // ✅ Substitui o conteúdo do modal pelo comprovante visual
+          const html = `
+          <div class="text-center p-3">
+            <i class="fas fa-check-circle text-success" style="font-size:60px;"></i>
+            <h4 class="mt-3 text-success">Pagamento aprovado!</h4>
+            <p>Seu pedido foi confirmado com sucesso 🍕</p>
+            <p class="text-muted mb-2">Obrigado por comprar na <b>Pizzaria Maluca</b></p>
+          </div>
+        `;
+          app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
+
+          // ⏳ redireciona após 3 segundos
           setTimeout(() => {
             window.location.href = "/pedido.html";
-          }, 2000);
+          }, 3000);
+        } else if (data.status === "rejected") {
+          clearInterval(interval);
+          localStorage.removeItem("pix_id");
+
+          app.method.mensagem("❌ Pagamento recusado. Tente novamente.", "red");
         }
       } catch (err) {
-        console.error("Erro ao verificar PIX:", err);
+        console.error("❌ Erro ao verificar PIX:", err);
       }
-    }, 10000); // a cada 10 segundos
+    }, 7000); // verifica a cada 7 segundos
   },
 
   // === CARTÕES SALVOS ===
