@@ -325,8 +325,12 @@ pagamento.method = {
             "green"
           );
 
-          // 🔥 Envia automaticamente o pedido para o WhatsApp
-          pagamento.method.enviarPedidoWhatsApp();
+          const subOrderData = app.method.obterValorSessao("sub-order");
+          if (subOrderData) {
+            const dados = JSON.parse(subOrderData);
+            pagamento.method.enviarPedidoWhatsApp(dados);
+          }
+
           localStorage.clear();
           setTimeout(() => {
             window.location.href = "/pedido.html";
@@ -395,6 +399,12 @@ pagamento.method = {
         if (data.payment_status === "approved" || data.status === "approved") {
           clearInterval(interval);
 
+          const subOrderData = app.method.obterValorSessao("sub-order");
+          if (subOrderData) {
+            const dados = JSON.parse(subOrderData);
+            pagamento.method.enviarPedidoWhatsApp(dados);
+          }
+
           // 🔹 Limpa PIX ID e carrinho/suborder
           localStorage.removeItem("pix_id");
           localStorage.removeItem("sub-order");
@@ -412,9 +422,6 @@ pagamento.method = {
           </div>
         `;
           app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
-
-          // 🔥 Envia automaticamente o pedido para o WhatsApp
-          pagamento.method.enviarPedidoWhatsApp();
 
           // ⏳ Redireciona após 3 segundos
           localStorage.clear();
