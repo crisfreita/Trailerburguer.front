@@ -478,10 +478,6 @@ pagamento.method = {
             <a href="${linkWhatsApp}" target="_blank" class="btn btn-success w-100 mt-2">
               <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
             </a>
-
-            <button onclick="window.location.href='/pedido.html'" class="btn btn-primary w-100 mt-2">
-              <i class="fas fa-list"></i> Ver pedido
-            </button>
           </div>
         `;
           app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
