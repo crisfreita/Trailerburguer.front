@@ -465,7 +465,7 @@ pagamento.method = {
           texto += `\n\n*Obrigado por comprar na Pizzaria Maluca!* 🍕`;
 
           const encode = encodeURIComponent(texto);
-          const linkWhatsApp = `https://wa.me/5533999694795?text=${encode}`;
+          const linkWhatsApp = `https://wa.me/5533998589550?text=${encode}`;
 
           // 🔹 Mostra modal com botão WhatsApp
           const html = `
