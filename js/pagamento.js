@@ -411,9 +411,10 @@ pagamento.method = {
           app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
 
           // ⏳ Redireciona após 3 segundos
+          localStorage.clear();
           setTimeout(() => {
             window.location.href = "/pedido.html";
-          }, 3000);
+          }, 9000);
         }
 
         // ❌ Pagamento recusado
