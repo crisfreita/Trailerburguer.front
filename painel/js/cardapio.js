@@ -815,7 +815,7 @@ cardapio.method = {
         }
 
         OPCIONAIS = response.data;
-        console.log("infos:", OPCIONAIS);
+        console.log("Infos:", OPCIONAIS);
 
         cardapio.method.carregarOpcionaisProduto(response.data);
         cardapio.method.carregarOpcionaisProdutoSimples(response.data);
@@ -1032,6 +1032,8 @@ cardapio.method = {
 
   // abre ou fecha a modal para cadastrar um novo opcional
   abrirModalAddOpcional: () => {
+    OPCIONAL_ITEM_ID = null;
+
     // fecha a modal de opcionais
     $("#modalOpcionaisProduto").modal("hide");
 
@@ -1074,16 +1076,21 @@ cardapio.method = {
         return;
       }
 
-      if (isNaN(precosimples)) {
+      if (isNaN(precosimples) || precosimples < 0) {
         app.method.mensagem("Informe o valor do opcional, por favor.");
         return;
       }
+
+      // Define a ordem com base na quantidade atual de cards simples já na tela
+      let ordem =
+        document.querySelectorAll("#listaOpcionaisSimples .card").length + 1;
 
       var dados = {
         nome: nomesimples,
         valor: precosimples,
         simples: true,
         idproduto: PRODUTO_ID,
+        ordem: ordem,
       };
 
       if (OPCIONAL_ITEM_EDITANDO_ID != null) {
@@ -1122,6 +1129,8 @@ cardapio.method = {
         .forEach((e, i) => {
           let _id = e.id.split("-")[1];
 
+          console.log(_id);
+
           let nomesimples = $("#txtNomeSimples-" + _id)
             .val()
             .trim();
@@ -1132,8 +1141,14 @@ cardapio.method = {
               .replace(",", ".")
           );
 
-          if (nomesimples.length <= 0) continuar = false;
-          if (isNaN(precosimples)) continuar = false;
+          if (nomesimples.length <= 0) {
+            continuar = false;
+          }
+
+          // Deixa adicionar opcionais de seleção após tirar o igual do < = 0
+          if (isNaN(precosimples) || precosimples < 0) {
+            continuar = false;
+          }
 
           // CAPTURAR O ID DO ITEM, CASO EXISTA
           let idopcionalitem = $("#txtIdOpcionalItem-" + _id).val(); // input hidden que você precisa ter
@@ -1141,6 +1156,8 @@ cardapio.method = {
           let item = {
             nome: nomesimples,
             valor: precosimples,
+            ordem: i + 1,
+            idproduto: PRODUTO_ID,
           };
 
           if (idopcionalitem) {
@@ -1168,6 +1185,12 @@ cardapio.method = {
         idproduto: PRODUTO_ID,
         lista: _opcoes,
       };
+
+      // Se for edição, adiciona os campos necessários
+      if (OPCIONAL_ITEM_ID) {
+        dados.idopcional = OPCIONAL_ITEM_ID;
+        dados.edicao = true;
+      }
 
       cardapio.method.salvarOpcionalProduto(dados);
       OPCIONAL_ITEM_EDITANDO_ID = null;
@@ -1296,6 +1319,66 @@ cardapio.method = {
   fecharModalAddOpcionalProduto: () => {
     $("#modalOpcionaisProduto").modal({ backdrop: "static" });
     $("#modalOpcionaisProduto").modal("show");
+  },
+
+  // Método para abrir a modal de editar ou adicionar novo opcional de seleção
+  editarOuAdicionarNovoOpcionalItem: (idopcional) => {
+    OPCIONAL_ITEM_ID = idopcional;
+
+    // Abre a modal
+    $("#modalOpcionaisProduto").modal("hide");
+    $("#modalAddOpcionalProduto").modal({ backdrop: "static" }).modal("show");
+
+    // Muda o tipo de opcional para seleção de opções
+    cardapio.method.changeTipoOpcional("chkSelecaoOpcoes");
+    document.getElementById("listaOpcoesSelecao").innerHTML = "";
+
+    let itens = OPCIONAIS.filter((e) => e.idopcional == idopcional);
+
+    let cabecalho = itens[0];
+    document.getElementById("txtTituloSecao").value = cabecalho.titulo;
+    document.getElementById("txtMinimoOpcao").value = cabecalho.minimo;
+    document.getElementById("txtMaximoOpcao").value = cabecalho.maximo;
+
+    itens.forEach((item) => {
+      const id = item.idopcionalitem;
+
+      const linha = `
+                <div class="row linha mt-4" id="opcao-${id}">
+                    <input type="hidden" id="txtIdOpcionalItem-${id}" value="${id}">
+                    <div class="col-8">
+                        <div class="form-group">
+                            <p class="title-categoria mb-0"><b>Nome:</b></p>
+                            <input id="txtNomeSimples-${id}" type="text" class="form-control" placeholder="Ex: Bacon" value="${
+        item.nomeopcional
+      }" />
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-group">
+                            <p class="title-categoria mb-0"><b>Preço (R$):</b></p>
+                            <input id="txtPrecoSimples-${id}" type="text" class="form-control money" placeholder="0,00" value="${item.valoropcional
+        .toFixed(2)
+        .toString()
+        .replace(".", ",")}" />
+                        </div>
+                    </div>
+                    <div class="col-1">
+                        <a href="#!" class="btn btn-red btn-sm mt-4" onclick="cardapio.method.removerLinhaOpcao('${id}')">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            `;
+
+      document
+        .getElementById("listaOpcoesSelecao")
+        .insertAdjacentHTML("beforeend", linha);
+    });
+
+    // atualiza o hint de texto
+    cardapio.method.atualizarHintOpcao();
+    cardapio.method.changeTituloSecaoOpcao();
   },
 
   // Função para alterar o estado do produto (ativado/desativado)
@@ -1507,8 +1590,17 @@ cardapio.template = {
   opcional: `
         <div class="container-group mb-5" data-minimo="\${minimo}" data-maximo="\${maximo}" id="opcional-\${idopcional}">
             \${obrigatorio}
-            <p class="title-categoria mb-0"><b>\${titulo}</b></p>
-            <span class="sub-title-categoria">\${sub-titulo}</span>
+            <div>
+                <div class="d-flex flex-column">
+                    <p class="title-categoria mb-0"><b>\${titulo}</b></p>
+                    <span class="sub-title-categoria">\${sub-titulo}</span>
+                </div>
+                <div class="actions mb-3">
+                    <a href="#!" class="icon-action" data-toggle="tooltip" data-placement="top" title="Editar seção" onclick="cardapio.method.editarOuAdicionarNovoOpcionalItem('\${idopcional}')">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+                </div>
+            </div>
             \${itens}
         </div>
     `,
