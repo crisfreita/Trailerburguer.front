@@ -304,10 +304,31 @@ pagamento.method = {
             if (tempo-- <= 0) {
               clearInterval(intervalo);
               el.innerText = "Expirado";
+
+              // Mensagem ao usuário
               app.method.mensagem(
-                "Tempo do QR Code expirado, gere novamente.",
+                "⏰ O QR Code expirou. Gere um novo pagamento.",
                 "red"
               );
+
+              // Cancela visualmente e limpa sessão
+              const pixId = localStorage.getItem("pix_id");
+              if (pixId) {
+                fetch(`/pagamento/cancelar/${pixId}`, { method: "POST" })
+                  .then((r) => r.json())
+                  .then((res) => {
+                    console.log("🔴 PIX cancelado por expiração:", res);
+                    localStorage.removeItem("pix_id");
+                    localStorage.removeItem("pix_qr");
+                    localStorage.removeItem("pix_text");
+                    localStorage.removeItem("pix_ticket");
+                  })
+                  .catch((err) => console.error("Erro ao cancelar PIX:", err));
+              }
+
+              // Atualiza interface
+              document.querySelector("#tempoPix").innerHTML = "Expirado";
+              return;
             }
           }, 1000);
 
