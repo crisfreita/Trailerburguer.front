@@ -1323,6 +1323,12 @@ cardapio.method = {
 
   // Método para abrir a modal de editar ou adicionar novo opcional de seleção
   editarOuAdicionarNovoOpcionalItem: (idopcional) => {
+    if (!OPCIONAIS || OPCIONAIS.length === 0) {
+      app.method.mensagem(
+        "Nenhum opcional encontrado. Tente novamente após recarregar a página."
+      );
+      return;
+    }
     OPCIONAL_ITEM_ID = idopcional;
 
     // Abre a modal
