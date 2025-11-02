@@ -306,15 +306,19 @@ pagamento.method = {
     // 🔹 Captura telefone do cliente (será usado para salvar cartão)
     const telefonecliente = SUB_ORDER.telefonecliente || "";
 
-    // Adiciona ao objeto de pagamento
-    dados.telefonecliente = telefonecliente;
+    // 🔹 Garante que o pedido será incluído no body
+    const body = {
+      ...dados, // formData, selectedPaymentMethod, salvarCartao
+      telefonecliente,
+      pedido: SUB_ORDER, // 👈 backend precisa disso!
+    };
 
-    // cria uma variavel pro back saber se é um rascunho
+    // cria uma variável pro back saber se é um rascunho
     SUB_ORDER.pedidoRascunho = 1;
 
-    // se já tiver um Pedido Em rascunho criado, só continua
+    // se já tiver um Pedido em rascunho criado, só continua
     if (SUB_ORDER.payment_created_id > 0) {
-      pagamento.method.pagar(dados); // chama gerar pagamento
+      pagamento.method.pagar(body); // 👈 agora envia o body completo
     } else {
       // Primeiro, salva o pedido como rascunho para obter o ID gerado
       app.method.post(
@@ -324,7 +328,7 @@ pagamento.method = {
           console.log(response);
           app.method.loading(false);
 
-          if (response.status == "error") {
+          if (response.status === "error") {
             console.log(response.message);
             return;
           }
@@ -333,11 +337,11 @@ pagamento.method = {
           SUB_ORDER.payment_created_id = response.order;
           app.method.gravarValorSessao(JSON.stringify(SUB_ORDER), "sub-order");
 
-          // 🔹 Garante que dados tenha o telefone antes de continuar
-          dados.telefonecliente = telefonecliente;
+          // Atualiza o pedido no body
+          body.pedido = SUB_ORDER;
 
-          // com o ID do pedido no SUB_ORDER, chama o metodo para gerar o pagamento do MP
-          pagamento.method.pagar(dados);
+          // com o ID do pedido no SUB_ORDER, chama o método para gerar o pagamento do MP
+          pagamento.method.pagar(body);
         },
         (error) => {
           console.log("error", error);
