@@ -928,6 +928,17 @@ textarea {
   padding: 2px 8px;
 }
 
+.cartao-salvo {
+  cursor: pointer;
+  border: 1px solid #eee;
+  transition: all 0.2s ease;
+}
+.cartao-salvo:hover {
+  background-color: #fff8e1;
+  transform: scale(1.01);
+  border-color: #ffcc00;
+}
+
 /* Pedido */
 
 .card-status-pedido {

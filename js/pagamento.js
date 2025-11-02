@@ -221,68 +221,66 @@ pagamento.method = {
     );
   },
 
-  // 🔹 Buscar cartões salvos do cliente
+  // 🔹 Buscar e exibir cartões salvos
   obterCartoesSalvos: async () => {
     try {
-      // 🔹 Obtém dados do pedido salvo (sub-order)
-      const subOrderData =
-        app.method.obterValorSessao("sub-order") ||
-        sessionStorage.getItem("sub-order") ||
-        localStorage.getItem("sub-order");
+      const telefone = SUB_ORDER?.telefonecliente;
+      if (!telefone) return;
 
-      if (!subOrderData) {
-        console.warn("⚠️ Nenhum sub-order encontrado para buscar cartões.");
-        return;
-      }
-
-      const SUB_ORDER = JSON.parse(subOrderData);
-      const telefone = SUB_ORDER.telefonecliente;
-
-      if (!telefone) {
-        console.warn("⚠️ Telefone do cliente não encontrado no pedido.");
-        return;
-      }
-
-      // 🔹 Faz a requisição ao backend com o telefone
       const res = await fetch(`/pagamento/cartoes?telefonecliente=${telefone}`);
-      if (!res.ok) return;
+      const cartoes = await res.json();
+      const container = document.querySelector("#containerCartoesSalvos");
+      container.innerHTML = "";
 
-      const data = await res.json();
-      const lista = document.querySelector("#listaCartoesSalvos");
-      lista.innerHTML = "";
-
-      if (!data || data.length === 0) {
-        lista.innerHTML = "<p class='text-muted mb-0'>Nenhum cartão salvo.</p>";
+      if (!Array.isArray(cartoes) || cartoes.length === 0) {
+        container.innerHTML = `<p class="text-muted mb-0">Nenhum cartão salvo ainda.</p>`;
         return;
       }
 
-      // 🔹 Monta a lista de cartões
-      data.forEach((cartao) => {
-        const div = document.createElement("div");
-        div.classList.add("card", "p-2", "mb-2");
-        div.innerHTML = `
-    <div class="d-flex justify-content-between align-items-center">
-      <span>💳 **** **** **** ${
-        cartao.ultimos_digitos
-      } — ${cartao.bandeira.toUpperCase()}</span>
-      <div>
-        <button class="btn btn-sm btn-primary me-2"
-          onclick="pagamento.method.usarCartaoSalvo('${cartao.idcartao_mp}', '${
-          cartao.bandeira
-        }')">
-          <i class="fas fa-check"></i> Usar
-        </button>
-        <button class="btn btn-sm btn-danger"
-          onclick="pagamento.method.removerCartao(${cartao.idcartao})">
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
-    </div>`;
-        lista.appendChild(div);
+      let html = `<p class="mb-2"><b>Cartões salvos:</b></p>`;
+      cartoes.forEach((c) => {
+        const bandeira = c.bandeira?.toLowerCase() || "credit-card";
+        const ultimos = c.ultimos_digitos || "****";
+        html += `
+        <div class="cartao-salvo card p-2 mb-2 d-flex justify-content-between align-items-center" 
+             onclick="pagamento.method.usarCartaoSalvo('${
+               c.idcartao_mp
+             }', '${bandeira}', '${ultimos}')">
+          <div class="d-flex align-items-center">
+            <i class="fab fa-cc-${bandeira}" style="font-size:22px;margin-right:8px;"></i>
+            <span>**** ${ultimos.toString().slice(-4)}</span>
+          </div>
+          <button class="btn btn-outline-success btn-sm">Usar este</button>
+        </div>
+      `;
       });
-    } catch (e) {
-      console.error("❌ Erro ao carregar cartões:", e);
+      container.innerHTML = html;
+    } catch (err) {
+      console.error("Erro ao listar cartões:", err);
     }
+  },
+
+  // 🔹 Usar o cartão salvo para pagamento direto
+  usarCartaoSalvo: (idcartao_mp, bandeira, ultimos) => {
+    app.method.mensagem(
+      `Usando cartão ${bandeira.toUpperCase()} ****${ultimos}`,
+      "green"
+    );
+
+    const dados = {
+      selectedPaymentMethod: "credit_card",
+      formData: {
+        token: idcartao_mp, // token salvo do Mercado Pago
+        payment_method_id: bandeira,
+        installments: 1,
+      },
+      salvarCartao: false, // já salvo
+      telefonecliente: SUB_ORDER.telefonecliente,
+      pedido: SUB_ORDER,
+    };
+
+    // 🔹 Envia direto para pagamento
+    pagamento.method.gerarPagamento(dados);
   },
 
   // 🔹 Remover um cartão salvo
