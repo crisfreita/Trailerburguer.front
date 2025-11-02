@@ -914,6 +914,20 @@ textarea {
   margin-top: 4px !important; /* ou 0px para colar de vez */
 }
 
+/* pagamento */
+
+#listaCartoesSalvos .card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+}
+
+#listaCartoesSalvos button {
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
 /* Pedido */
 
 .card-status-pedido {
