@@ -887,6 +887,7 @@ carrinho.method = {
         troco: TROCO,
         nomecliente: nome,
         telefonecliente: celular,
+        total: valorTotal,
       };
 
       // se for pagamento online
