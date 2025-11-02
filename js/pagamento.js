@@ -261,16 +261,23 @@ pagamento.method = {
         const div = document.createElement("div");
         div.classList.add("card", "p-2", "mb-2");
         div.innerHTML = `
-        <div class="d-flex justify-content-between align-items-center">
-          <span>💳 **** **** **** ${
-            cartao.ultimos_digitos
-          } — ${cartao.bandeira.toUpperCase()}</span>
-          <button class="btn btn-sm btn-danger" onclick="pagamento.method.removerCartao(${
-            cartao.idcartao
-          })">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>`;
+    <div class="d-flex justify-content-between align-items-center">
+      <span>💳 **** **** **** ${
+        cartao.ultimos_digitos
+      } — ${cartao.bandeira.toUpperCase()}</span>
+      <div>
+        <button class="btn btn-sm btn-primary me-2"
+          onclick="pagamento.method.usarCartaoSalvo('${cartao.idcartao_mp}', '${
+          cartao.bandeira
+        }')">
+          <i class="fas fa-check"></i> Usar
+        </button>
+        <button class="btn btn-sm btn-danger"
+          onclick="pagamento.method.removerCartao(${cartao.idcartao})">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>`;
         lista.appendChild(div);
       });
     } catch (e) {
@@ -297,6 +304,47 @@ pagamento.method = {
       }
     } catch (err) {
       console.error("Erro ao remover cartão:", err);
+    }
+  },
+
+  usarCartaoSalvo: async (idcartao_mp, bandeira) => {
+    try {
+      app.method.loading(true);
+
+      // Busca o pedido salvo (SUB_ORDER)
+      const subOrderData =
+        app.method.obterValorSessao("sub-order") ||
+        sessionStorage.getItem("sub-order") ||
+        localStorage.getItem("sub-order");
+
+      if (!subOrderData) {
+        app.method.mensagem("Pedido não encontrado. Refaça o pedido.", "red");
+        return;
+      }
+
+      const SUB_ORDER = JSON.parse(subOrderData);
+      const telefonecliente = SUB_ORDER.telefonecliente || "";
+
+      // Cria o objeto de pagamento usando o cartão salvo
+      const dados = {
+        selectedPaymentMethod: "credit_card",
+        salvarCartao: false, // já está salvo
+        telefonecliente,
+        formData: {
+          token: idcartao_mp, // 👈 importante
+          payment_method_id: bandeira.toLowerCase(), // ex: 'master' ou 'visa'
+        },
+        pedido: SUB_ORDER,
+      };
+
+      console.log("💳 Pagando com cartão salvo:", dados);
+
+      // Chama o mesmo fluxo de pagamento normal
+      pagamento.method.pagar(dados);
+    } catch (e) {
+      console.error("Erro ao usar cartão salvo:", e);
+    } finally {
+      app.method.loading(false);
     }
   },
 
