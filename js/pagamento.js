@@ -515,7 +515,6 @@ pagamento.method = {
         }
 
         // 💳 Se for cartão aprovado
-        // 💳 Se for cartão aprovado
         if (response.status_mp === "approved") {
           console.log("✅ Pagamento via cartão aprovado!");
 
@@ -584,33 +583,29 @@ pagamento.method = {
           const encode = encodeURIComponent(texto);
           const linkWhatsApp = `https://wa.me/5533998589550?text=${encode}`;
 
-          // 🔹 Modal com mesmo estilo do PIX
+          // 🔹 Envia automaticamente o pedido via WhatsApp
+          window.open(linkWhatsApp, "_blank");
+
+          // 🔹 Mostra modal de confirmação
           const html = `
     <div class="text-center p-3">
       <i class="fas fa-check-circle text-success" style="font-size:60px;"></i>
       <h4 class="mt-3 text-success">Pagamento aprovado!</h4>
-      <p>Seu pedido foi confirmado com sucesso 🍕</p>
+      <p>Seu pedido foi enviado para o WhatsApp 🍕</p>
       <p class="text-muted mb-3">Obrigado por comprar na <b>Pizzaria Maluca</b></p>
-
-      <a href="${linkWhatsApp}"target="_blank" class="btn btn-success w-100 mt-2" onclick="pagamento.method.finalizarPedidoWhatsApp()">
-         <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
-      </a>
-
-       
     </div>
   `;
+          app.method.exibirModalCustom("Pedido Enviado ✅", html);
 
-          app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
-
-          // 🔹 Limpa o carrinho
+          // 🔹 Limpa carrinho e redireciona
           localStorage.removeItem("pix_id");
           localStorage.removeItem("carrinho");
           sessionStorage.removeItem("carrinho");
 
-          // ⏳ Redireciona após alguns segundos
+          // Espera 5 segundos antes de redirecionar
           setTimeout(() => {
             window.location.href = "/pedido.html";
-          }, 10000);
+          }, 5000);
         }
 
         // ⚠️ Caso o pagamento fique pendente (ex: análise)
