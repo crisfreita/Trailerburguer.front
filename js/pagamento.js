@@ -417,8 +417,8 @@ pagamento.method = {
       <p>Seu pedido foi confirmado com sucesso 🍕</p>
       <p class="text-muted mb-3">Obrigado por comprar na <b>Pizzaria Maluca</b></p>
 
-      <a href="${linkWhatsApp}" target="_blank" class="btn btn-success w-100 mt-2">
-        <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
+      <a href="${linkWhatsApp}"target="_blank" class="btn btn-success w-100 mt-2" onclick="pagamento.method.finalizarPedidoWhatsApp()">
+         <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
       </a>
 
        
@@ -573,11 +573,12 @@ pagamento.method = {
 
             <p class="text-muted mb-3">Para finalizar o pedido envie o PEDIDO para o <b>WhatsApp</b></p>
 
-            <a href="${linkWhatsApp}" target="_blank" class="btn btn-success w-100 mt-2">
-              <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
+            <a href="${linkWhatsApp}"target="_blank" class="btn btn-success w-100 mt-2" onclick="pagamento.method.finalizarPedidoWhatsApp()">
+               <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
             </a>
 
-            <p class="text-muted mb-3">Obrigado por comprar na <b>Trailer Burguer</b></p>
+
+            <p class="text-muted mb-3">Obrigado por comprar no <b>Trailer Burguer</b></p>
           </div>
         `;
           app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
@@ -598,6 +599,34 @@ pagamento.method = {
         console.error("❌ Erro ao verificar PIX:", err);
       }
     }, 7000); // verifica a cada 7 segundos
+  },
+
+  finalizarPedidoWhatsApp: () => {
+    try {
+      // Fecha modal de pagamento aprovado
+      const modal = document.querySelector(
+        ".modal-custom, .modal, .swal2-container"
+      );
+      if (modal) modal.remove();
+
+      // Limpa carrinho e dados locais
+      localStorage.removeItem("pix_id");
+      localStorage.removeItem("carrinho");
+      sessionStorage.removeItem("carrinho");
+      localStorage.removeItem("sub-order");
+      sessionStorage.removeItem("sub-order");
+
+      console.log(
+        "🧹 Carrinho e dados limpos após envio do pedido para o WhatsApp"
+      );
+
+      // Redireciona após 2 segundos
+      setTimeout(() => {
+        window.location.href = "/pedido.html";
+      }, 2000);
+    } catch (e) {
+      console.error("⚠️ Erro ao finalizar envio do pedido:", e);
+    }
   },
 
   // iniciarVerificacaoPix: () => {
