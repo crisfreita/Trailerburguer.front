@@ -187,6 +187,7 @@ pagamento.method = {
             formData: formData,
             selectedPaymentMethod: selectedPaymentMethod,
             salvarCartao: salvarCartao,
+            telefonecliente: telefonecliente, // 👈 importante!
           };
 
           pagamento.method.gerarPagamento(dados);
@@ -209,7 +210,27 @@ pagamento.method = {
   // 🔹 Buscar cartões salvos do cliente
   obterCartoesSalvos: async () => {
     try {
-      const res = await fetch("/pagamento/cartoes");
+      // 🔹 Obtém dados do pedido salvo (sub-order)
+      const subOrderData =
+        app.method.obterValorSessao("sub-order") ||
+        sessionStorage.getItem("sub-order") ||
+        localStorage.getItem("sub-order");
+
+      if (!subOrderData) {
+        console.warn("⚠️ Nenhum sub-order encontrado para buscar cartões.");
+        return;
+      }
+
+      const SUB_ORDER = JSON.parse(subOrderData);
+      const telefone = SUB_ORDER.telefonecliente;
+
+      if (!telefone) {
+        console.warn("⚠️ Telefone do cliente não encontrado no pedido.");
+        return;
+      }
+
+      // 🔹 Faz a requisição ao backend com o telefone
+      const res = await fetch(`/pagamento/cartoes?telefonecliente=${telefone}`);
       if (!res.ok) return;
 
       const data = await res.json();
@@ -221,6 +242,7 @@ pagamento.method = {
         return;
       }
 
+      // 🔹 Monta a lista de cartões
       data.forEach((cartao) => {
         const div = document.createElement("div");
         div.classList.add("card", "p-2", "mb-2");
@@ -238,7 +260,7 @@ pagamento.method = {
         lista.appendChild(div);
       });
     } catch (e) {
-      console.error("Erro ao carregar cartões:", e);
+      console.error("❌ Erro ao carregar cartões:", e);
     }
   },
 
