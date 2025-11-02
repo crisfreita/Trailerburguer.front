@@ -179,23 +179,37 @@ pagamento.method = {
           pagamento.method.obterCartoesSalvos();
         },
         onSubmit: ({ selectedPaymentMethod, formData }) => {
-          const salvarCartao =
-            document.querySelector("#chkSalvarCartao").checked;
-          // callback chamado quando há click no botão de envio de dados
+          // ✅ Busca telefone do cliente diretamente do sub-order
+          const subOrderData =
+            app.method.obterValorSessao("sub-order") ||
+            sessionStorage.getItem("sub-order") ||
+            localStorage.getItem("sub-order");
 
-          let dados = {
-            formData: formData,
-            selectedPaymentMethod: selectedPaymentMethod,
-            salvarCartao: salvarCartao,
-            telefonecliente: telefonecliente, // 👈 importante!
+          let telefonecliente = "";
+          if (subOrderData) {
+            try {
+              telefonecliente = JSON.parse(subOrderData)?.telefonecliente || "";
+            } catch (e) {
+              console.warn("⚠️ Falha ao ler telefone:", e);
+            }
+          }
+
+          const salvarCartao =
+            document.querySelector("#chkSalvarCartao")?.checked || false;
+
+          // ✅ Monta os dados e chama o pagamento
+          const dados = {
+            formData,
+            selectedPaymentMethod,
+            salvarCartao,
+            telefonecliente,
           };
 
           pagamento.method.gerarPagamento(dados);
         },
         onError: (error) => {
-          // callback chamado para todos os casos de erro do Brick
-          console.error(error);
-          app.method.mensagem(error);
+          console.error("Erro no Brick:", error);
+          app.method.mensagem("Erro no pagamento. Tente novamente.", "red");
         },
       },
     };
