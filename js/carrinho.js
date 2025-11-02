@@ -876,6 +876,25 @@ carrinho.method = {
         return;
       }
 
+      // 🔹 CALCULA O TOTAL
+      let valorTotal = 0;
+      CARRINHO_ATUAL.forEach((item) => {
+        let subtotal = item.quantidade * item.valor;
+
+        if (item.opcionais?.length > 0) {
+          item.opcionais.forEach((op) => {
+            subtotal += item.quantidade * op.valoropcional;
+          });
+        }
+
+        valorTotal += subtotal;
+      });
+
+      // adiciona taxa de entrega se houver
+      if (checkEntrega && TAXA_ATUAL > 0) {
+        valorTotal += TAXA_ATUAL;
+      }
+
       var dados = {
         entrega: checkEntrega,
         retirada: checkRetirada,
