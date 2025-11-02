@@ -152,7 +152,7 @@ pagamento.method = {
         payer: {
           firstName: SUB_ORDER.nomecliente,
           lastName: "",
-          email: "",
+          email: SUB_ORDER.email || "",
         },
       },
       customization: {
@@ -174,13 +174,19 @@ pagamento.method = {
         },
       },
       callbacks: {
-        onReady: () => {},
+        onReady: () => {
+          // quando o brick estiver pronto, busca os cartões salvos
+          pagamento.method.obterCartoesSalvos();
+        },
         onSubmit: ({ selectedPaymentMethod, formData }) => {
+          const salvarCartao =
+            document.querySelector("#chkSalvarCartao").checked;
           // callback chamado quando há click no botão de envio de dados
 
           let dados = {
             formData: formData,
             selectedPaymentMethod: selectedPaymentMethod,
+            salvarCartao: salvarCartao,
           };
 
           pagamento.method.gerarPagamento(dados);
@@ -198,6 +204,64 @@ pagamento.method = {
       "paymentBrick_container",
       settings
     );
+  },
+
+  // 🔹 Buscar cartões salvos do cliente
+  obterCartoesSalvos: async () => {
+    try {
+      const res = await fetch("/pagamento/cartoes");
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const lista = document.querySelector("#listaCartoesSalvos");
+      lista.innerHTML = "";
+
+      if (!data || data.length === 0) {
+        lista.innerHTML = "<p class='text-muted mb-0'>Nenhum cartão salvo.</p>";
+        return;
+      }
+
+      data.forEach((cartao) => {
+        const div = document.createElement("div");
+        div.classList.add("card", "p-2", "mb-2");
+        div.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+          <span>💳 **** **** **** ${
+            cartao.ultimos_digitos
+          } — ${cartao.bandeira.toUpperCase()}</span>
+          <button class="btn btn-sm btn-danger" onclick="pagamento.method.removerCartao(${
+            cartao.idcartao
+          })">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>`;
+        lista.appendChild(div);
+      });
+    } catch (e) {
+      console.error("Erro ao carregar cartões:", e);
+    }
+  },
+
+  // 🔹 Remover um cartão salvo
+  removerCartao: async (idcartao) => {
+    if (!confirm("Deseja remover este cartão?")) return;
+
+    try {
+      const res = await fetch(`/pagamento/cartoes/${idcartao}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (data.status === "success") {
+        app.method.mensagem("Cartão removido com sucesso!", "green");
+        pagamento.method.obterCartoesSalvos();
+      } else {
+        app.method.mensagem("Erro ao remover cartão.", "red");
+      }
+    } catch (err) {
+      console.error("Erro ao remover cartão:", err);
+    }
   },
 
   gerarPagamento: (dados) => {
