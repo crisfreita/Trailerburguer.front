@@ -289,12 +289,32 @@ pagamento.method = {
   gerarPagamento: (dados) => {
     app.method.loading(true);
 
+    // 🔹 Garante que SUB_ORDER está atualizado
+    const subOrderData =
+      app.method.obterValorSessao("sub-order") ||
+      sessionStorage.getItem("sub-order") ||
+      localStorage.getItem("sub-order");
+
+    if (!subOrderData) {
+      app.method.mensagem("Pedido não encontrado. Refaça o pedido.", "red");
+      app.method.loading(false);
+      return;
+    }
+
+    SUB_ORDER = JSON.parse(subOrderData);
+
+    // 🔹 Captura telefone do cliente (será usado para salvar cartão)
+    const telefonecliente = SUB_ORDER.telefonecliente || "";
+
+    // Adiciona ao objeto de pagamento
+    dados.telefonecliente = telefonecliente;
+
     // cria uma variavel pro back saber se é um rascunho
     SUB_ORDER.pedidoRascunho = 1;
 
     // se já tiver um Pedido Em rascunho criado, só continua
     if (SUB_ORDER.payment_created_id > 0) {
-      pagamento.method.pagar(dados);
+      pagamento.method.pagar(dados); // chama gerar pagamento
     } else {
       // Primeiro, salva o pedido como rascunho para obter o ID gerado
       app.method.post(
@@ -313,7 +333,10 @@ pagamento.method = {
           SUB_ORDER.payment_created_id = response.order;
           app.method.gravarValorSessao(JSON.stringify(SUB_ORDER), "sub-order");
 
-          // com o ID do peido no SUB_ORDER, chama o metodo para gerar o pagamento do MP
+          // 🔹 Garante que dados tenha o telefone antes de continuar
+          dados.telefonecliente = telefonecliente;
+
+          // com o ID do pedido no SUB_ORDER, chama o metodo para gerar o pagamento do MP
           pagamento.method.pagar(dados);
         },
         (error) => {
