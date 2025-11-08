@@ -668,26 +668,26 @@ pagamento.method = {
 
         console.log("🔄 Verificando status PIX:", data);
 
-        // ✅ Pagamento aprovado
+        // ✅✅✅ PIX APROVADO
         if (data.payment_status === "approved" || data.status === "approved") {
           clearInterval(interval);
 
-          // 🔹 Busca dados completos do pedido (session/localStorage)
+          // 🔹 Busca dados completos do pedido
           const subOrderData =
             app.method.obterValorSessao("sub-order") ||
             sessionStorage.getItem("sub-order") ||
             localStorage.getItem("sub-order");
 
           let dados = null;
-          if (subOrderData) {
-            try {
-              dados = JSON.parse(subOrderData);
-            } catch (e) {
-              console.warn("⚠️ Falha ao ler dados do pedido:", e);
-            }
+          try {
+            dados = JSON.parse(subOrderData);
+          } catch (e) {
+            console.warn("⚠️ Falha ao ler dados do pedido:", e);
           }
 
-          // 🔹 Gera link do WhatsApp com informações do pedido
+          // -----------------------------
+          // ✅ GERA TEXTO DO PEDIDO
+          // -----------------------------
           let texto = `*Olá! Me chamo ${
             dados?.nomecliente || ""
           }, acabei de fazer um pedido pago via PIX!*`;
@@ -737,29 +737,40 @@ pagamento.method = {
           const encode = encodeURIComponent(texto);
           const linkWhatsApp = `https://wa.me/5533998589550?text=${encode}`;
 
-          // 🔹 Mostra modal com botão WhatsApp
+          // -----------------------------
+          // ✅ MOSTRA MODAL
+          // -----------------------------
           const html = `
           <div class="text-center p-3">
             <i class="fas fa-check-circle text-success" style="font-size:60px;"></i>
             <h4 class="mt-3 text-success">Pagamento aprovado!</h4>
             <p>Seu pedido foi confirmado com sucesso 🍕</p>
 
-            <p class="text-muted mb-3">Para finalizar o pedido envie o PEDIDO para o <b>WhatsApp</b></p>
+            <p class="text-muted mb-3">Envie o pedido para o <b>WhatsApp</b></p>
 
-            <a href="${linkWhatsApp}"target="_blank" class="btn btn-success w-100 mt-2" onclick="pagamento.method.finalizarPedidoWhatsApp()">
+            <a href="${linkWhatsApp}" target="_blank" 
+               class="btn btn-success w-100 mt-2"
+               onclick="pagamento.method.finalizarPedidoWhatsApp()">
                <i class="fab fa-whatsapp"></i> Enviar pedido para o WhatsApp
             </a>
-
-
-            <p class="text-muted mb-3">Obrigado por comprar no <b>Trailer Burguer</b></p>
           </div>
         `;
           app.method.exibirModalCustom("Pagamento Aprovado ✅", html);
 
-          // 🔹 Limpa storage (mantém só o pedido)
+          // ✅ limpa PIX ID
           localStorage.removeItem("pix_id");
-          localStorage.removeItem("carrinho");
-          sessionStorage.removeItem("carrinho");
+        }
+
+        // ✅✅✅ PIX EXPIRADO — CANCELOU
+        else if (data.status === "expired") {
+          clearInterval(interval);
+
+          console.log("⚠️ PIX expirado! Limpando dados...");
+
+          localStorage.removeItem("pix_id");
+          sessionStorage.removeItem("sub-order");
+
+          app.method.mensagem("⚠️ O PIX expirou. Tente novamente.", "red");
         }
 
         // ❌ Pagamento recusado
@@ -771,7 +782,7 @@ pagamento.method = {
       } catch (err) {
         console.error("❌ Erro ao verificar PIX:", err);
       }
-    }, 7000); // verifica a cada 7 segundos
+    }, 7000);
   },
 
   finalizarPedidoWhatsApp: () => {
@@ -783,18 +794,23 @@ pagamento.method = {
       if (modal) modal.remove();
 
       // Limpa carrinho e dados locais
-      localStorage.removeItem("pix_id");
-      localStorage.removeItem("carrinho");
-      sessionStorage.removeItem("carrinho");
-      localStorage.removeItem("sub-order");
+      sessionStorage.removeItem("cart");
       sessionStorage.removeItem("sub-order");
+      sessionStorage.removeItem("valor-total");
+      sessionStorage.removeItem("pix_id");
+      sessionStorage.removeItem("pix_status");
+      sessionStorage.removeItem("cartao_status");
+      sessionStorage.removeItem("cartao_id");
+      localStorage.removeItem("cart");
 
-      console.log(
-        "🧹 Carrinho e dados limpos após envio do pedido para o WhatsApp"
-      );
+      // ✅ Limpa também o carrinho do app.method caso você use
+      if (app.method?.limparCarrinho) {
+        app.method.limparCarrinho();
+      }
 
       // Redireciona após 2 segundos
       setTimeout(() => {
+        localStorage.removeItem("cart");
         window.location.href = "/pedido.html";
       }, 2000);
     } catch (e) {
