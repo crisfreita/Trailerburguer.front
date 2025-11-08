@@ -260,29 +260,6 @@ pagamento.method = {
     }
   },
 
-  // 🔹 Usar o cartão salvo para pagamento direto
-  usarCartaoSalvo: (idcartao_mp, bandeira, ultimos) => {
-    app.method.mensagem(
-      `Usando cartão ${bandeira.toUpperCase()} ****${ultimos}`,
-      "green"
-    );
-
-    const dados = {
-      selectedPaymentMethod: "credit_card",
-      formData: {
-        token: idcartao_mp, // token salvo do Mercado Pago
-        payment_method_id: bandeira,
-        installments: 1,
-      },
-      salvarCartao: false, // já salvo
-      telefonecliente: SUB_ORDER.telefonecliente,
-      pedido: SUB_ORDER,
-    };
-
-    // 🔹 Envia direto para pagamento
-    pagamento.method.gerarPagamento(dados);
-  },
-
   // 🔹 Remover um cartão salvo
   removerCartao: async (idcartao) => {
     if (!confirm("Deseja remover este cartão?")) return;
@@ -305,11 +282,10 @@ pagamento.method = {
     }
   },
 
-  usarCartaoSalvo: async (idcartao_mp, bandeira) => {
+  usarCartaoSalvo: async (card_id, customer_id, bandeira, ultimos) => {
     try {
       app.method.loading(true);
 
-      // Busca o pedido salvo (SUB_ORDER)
       const subOrderData =
         app.method.obterValorSessao("sub-order") ||
         sessionStorage.getItem("sub-order") ||
@@ -323,21 +299,28 @@ pagamento.method = {
       const SUB_ORDER = JSON.parse(subOrderData);
       const telefonecliente = SUB_ORDER.telefonecliente || "";
 
-      // Cria o objeto de pagamento usando o cartão salvo
+      // ✅ Pagamento com cartão salvo NÃO usa token
       const dados = {
         selectedPaymentMethod: "credit_card",
-        salvarCartao: false, // já está salvo
+        salvarCartao: false,
         telefonecliente,
-        formData: {
-          token: idcartao_mp, // 👈 importante
-          payment_method_id: bandeira.toLowerCase(), // ex: 'master' ou 'visa'
+
+        // ✅ Estes dados serão usados no backend
+        cartaoSalvo: {
+          customer_id: customer_id,
+          card_id: card_id,
+          payment_method_id: bandeira.toLowerCase(),
         },
+
         pedido: SUB_ORDER,
+        formData: {
+          token: null, // ✅ IMPORTANTE: força ausência de token
+        },
       };
 
       console.log("💳 Pagando com cartão salvo:", dados);
 
-      // Chama o mesmo fluxo de pagamento normal
+      // ✅ Reaproveita o mesmo fluxo do cartão normal
       pagamento.method.pagar(dados);
     } catch (e) {
       console.error("Erro ao usar cartão salvo:", e);
@@ -415,6 +398,18 @@ pagamento.method = {
   // depois que salva o pedido, gera o pagamento
   pagar: (dados) => {
     dados.pedido = SUB_ORDER;
+
+    // ✅ Detecta se é cartão salvo (sem token)
+    const ehCartaoSalvo =
+      (!dados?.formData?.token || dados?.formData?.token === null) &&
+      dados?.cartaoSalvo;
+
+    // ✅ Força token null em cartão salvo para evitar erro no MP
+    if (ehCartaoSalvo) {
+      dados.formData.token = null;
+
+      console.log("✅ Pagando com cartão salvo:", dados.cartaoSalvo);
+    }
 
     app.method.post(
       "/pagamento",
