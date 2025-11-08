@@ -242,17 +242,20 @@ pagamento.method = {
         const bandeira = c.bandeira?.toLowerCase() || "credit-card";
         const ultimos = c.ultimos_digitos || "****";
         html += `
-        <div class="cartao-salvo card p-2 mb-2 d-flex justify-content-between align-items-center" 
-             onclick="pagamento.method.usarCartaoSalvo('${
-               c.idcartao_mp
-             }', '${bandeira}', '${ultimos}')">
-          <div class="d-flex align-items-center">
-            <i class="fab fa-cc-${bandeira}" style="font-size:22px;margin-right:8px;"></i>
-            <span>**** ${ultimos.toString().slice(-4)}</span>
-          </div>
-          <button class="btn btn-outline-success btn-sm">Usar este</button>
-        </div>
-      `;
+  <div class="cartao-salvo card p-2 mb-2 d-flex justify-content-between align-items-center" 
+       onclick="pagamento.method.usarCartaoSalvo(
+          '${c.card_id}',
+          '${c.customer_id}',
+          '${c.bandeira}',
+          '${c.ultimos_digitos}'
+       )">
+    <div class="d-flex align-items-center">
+      <i class="fab fa-cc-${bandeira}" style="font-size:22px;margin-right:8px;"></i>
+      <span>**** ${ultimos.toString().slice(-4)}</span>
+    </div>
+    <button class="btn btn-outline-success btn-sm">Usar este</button>
+  </div>
+`;
       });
       container.innerHTML = html;
     } catch (err) {
