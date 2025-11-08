@@ -672,6 +672,14 @@ pagamento.method = {
         if (data.payment_status === "approved" || data.status === "approved") {
           clearInterval(interval);
 
+          // ✅✅✅ LIMPA IMEDIATAMENTE O CARRINHO
+          sessionStorage.removeItem("cart");
+          localStorage.removeItem("cart");
+
+          if (app.method?.limparCarrinho) {
+            app.method.limparCarrinho();
+          }
+
           // 🔹 Busca dados completos do pedido
           const subOrderData =
             app.method.obterValorSessao("sub-order") ||
@@ -810,7 +818,7 @@ pagamento.method = {
 
       // Redireciona após 2 segundos
       setTimeout(() => {
-        localStorage.removeItem("cart");
+        sessionStorage.removeItem("cart");
         window.location.href = "/pedido.html";
       }, 2000);
     } catch (e) {
