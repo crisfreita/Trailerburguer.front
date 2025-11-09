@@ -3,21 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Trailer Burguer</title>
+    <title>Açai Do Tuba</title>
 
     <link rel="stylesheet" href="./css/bootstrap.min.css" />
     <link rel="stylesheet" href="./boxicons/css/boxicons.css" />
     <link rel="stylesheet" href="./css/fontawesome.css" />
     <link rel="stylesheet" href="./css/animate.css" />
     <link rel="stylesheet" href="./css/main.css" />
-    <link rel="stylesheet" href="./css/swiper-bundle.min.css" />
+
+    <!-- ✅ ANTI-CACHE AUTOMÁTICO -->
+    <script>
+      (function () {
+        const version = Date.now();
+        document.querySelectorAll("link[href], script[src]").forEach((tag) => {
+          let attr = tag.tagName === "SCRIPT" ? "src" : "href";
+          let url = tag.getAttribute(attr);
+          if (!url) return;
+          if (url.startsWith("http")) return; // evita CDN
+          tag.setAttribute(
+            attr,
+            url + (url.includes("?") ? "&v=" + version : "?v=" + version)
+          );
+        });
+      })();
+    </script>
+    <!-- ✅ FIM ANTI-CACHE -->
   </head>
+
   <body>
     <div class="loader-full hidden">
-      <img
-        src="../img/Imagem_do_WhatsApp_de_2025-06-22_à_s__11.40.53_56760167-removebg-preview.png"
-        width="100"
-      />
+      <img src="./img/logodelivery.png" width="100" />
     </div>
 
     <div class="bg-top"></div>
@@ -34,9 +49,8 @@
                 <i class="fa fa-clock"></i> <span id="lblLojaAberta"></span>
               </p>
 
-              <!-- Ícone do WhatsApp -->
               <a
-                href="https://wa.me/5533999014256"
+                href="https://wa.me/5533999694795"
                 target="_blank"
                 class="whatsapp-icon"
               >
@@ -49,68 +63,6 @@
         </div>
       </div>
     </header>
-
-    <!-- SLIDE PROMOCIONAL -->
-    <!-- Swiper CSS -->
-    <link rel="stylesheet" href="./css/swiper-bundle.min.css" />
-    <!-- Swiper JS -->
-    <script src="./js/swiper-bundle.min.js"></script>
-    <!-- Swiper Banners -->
-    <section class="swiper-container width-fix mt-3">
-      <div class="swiper mySwiper">
-        <div class="swiper-wrapper">
-          <!-- Slide 1 -->
-          <div class="swiper-slide">
-            <img
-              src="./img/Imagem do WhatsApp de 2025-09-08 à(s) 08.59.22_cf868b6b.jpg"
-              alt="Promoção 1"
-              style="width: 100%; border-radius: 10px"
-            />
-          </div>
-          <!-- Slide 2 -->
-          <div class="swiper-slide">
-            <img
-              src="./img/Imagem do WhatsApp de 2025-09-08 à(s) 09.17.05_96f6aa23.jpg"
-              alt="Promoção 2"
-              style="width: 100%; border-radius: 10px"
-            />
-          </div>
-          <!-- Slide 3 -->
-          <div class="swiper-slide">
-            <img
-              src="./img/Imagem do WhatsApp de 2025-09-08 à(s) 09.22.41_4790280f.jpg"
-              alt="Promoção 3"
-              style="width: 100%; border-radius: 10px"
-            />
-          </div>
-        </div>
-
-        <!-- Paginação -->
-        <div class="swiper-pagination"></div>
-
-        <!-- Botões de navegação -->
-        <div class="swiper-button-prev"></div>
-        <div class="swiper-button-next"></div>
-      </div>
-    </section>
-
-    <script>
-      var swiper = new Swiper(".mySwiper", {
-        loop: true,
-        autoplay: {
-          delay: 3000,
-          disableOnInteraction: false,
-        },
-        pagination: {
-          el: ".swiper-pagination",
-          clickable: true,
-        },
-        navigation: {
-          nextEl: ".swiper-button-next",
-          prevEl: ".swiper-button-prev",
-        },
-      });
-    </script>
 
     <section class="categoria width-fix mt-4">
       <div class="container-menu">
