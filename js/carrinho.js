@@ -922,33 +922,38 @@ carrinho.method = {
 
       app.method.loading(true);
 
-      app.method.post("/pedido", JSON.stringify(dados), (response) => {
-        console.log("📥 RESPOSTA BACKEND:", response);
-        app.method.loading(false);
+      app.method.post(
+        "/pedido",
+        JSON.stringify(dados),
+        (response) => {
+          console.log("📥 RESPOSTA BACKEND:", response);
+          app.method.loading(false);
 
-        if (response.status === "error") {
-          app.method.mensagem(response.message);
-          return;
-        }
+          if (response.status === "error") {
+            app.method.mensagem(response.message);
+            return;
+          }
 
-        app.method.mensagem("Pedido realizado com sucesso!", "green");
+          app.method.mensagem("Pedido realizado com sucesso!", "green");
 
-        // 🔹 Adiciona id do pedido retornado
-        dados.idpedido = response.order.idpedido;
-        dados.order = response.order;
+          dados.idpedido = response.order.idpedido;
+          dados.order = response.order;
 
-        // 🔹 Salva o pedido no localStorage
-        app.method.gravarValorSessao(JSON.stringify(dados), "order");
+          app.method.gravarValorSessao(JSON.stringify(dados), "order");
 
-        // 🔹 Envia WhatsApp apenas em pagamentos normais
-        carrinho.method.finalizarPedido(dados);
+          carrinho.method.finalizarPedido(dados);
 
-        // 🔹 Redireciona
-        setTimeout(() => {
-          localStorage.removeItem("cart");
-          window.location.href = `/pedido.html?id=${dados.idpedido}`;
-        }, 1500);
-      });
+          setTimeout(() => {
+            localStorage.removeItem("cart");
+            window.location.href = `/pedido.html?id=${dados.idpedido}`;
+          }, 1500);
+        },
+        (error) => {
+          console.log(error);
+          app.method.loading(false);
+        },
+        false // 🔥 NÃO EXIGIR TOKEN NO PEDIDO
+      );
     } else {
       app.method.mensagem("Nenhum item no carrinho.");
     }
