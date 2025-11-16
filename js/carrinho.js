@@ -763,7 +763,7 @@ carrinho.method = {
       if (FORMA_SELECIONADA.idformapagamento == 1) {
         document.querySelector(
           "#lblDescFormaPagamentoSelecionada"
-        ).innerText = `Pagamento na entrega do pedido.`;
+        ).innerText = `Chave PiX 33998589550 Favor enviar o comprovante após o pagamento.`;
         document.querySelector(
           "#iconFormaPagamentoSelecionada"
         ).innerHTML = `<i class="fas fa-receipt"></i>`;
