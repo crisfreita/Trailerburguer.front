@@ -41,7 +41,7 @@ pedido.method = {
       app.method.loading(true);
 
       app.method.get(
-        "/pedido/" + order.order,
+        "/pedido/" + order.idpedido,
         (response) => {
           console.log(response);
           app.method.loading(false);
@@ -51,7 +51,6 @@ pedido.method = {
             return;
           }
 
-          // primeiro, carrega o card principal do pedido
           document.querySelector("#containerAcompanhamento").innerHTML = "";
 
           let datacadastro = response.data.datacadastro.split("T");
@@ -70,9 +69,9 @@ pedido.method = {
           document.querySelector("#containerAcompanhamento").innerHTML += temp;
 
           pedido.method.carregarEtapas(response.data);
-
           pedido.method.carregarModalDetalhes(response.data);
         },
+
         (error) => {
           app.method.loading(false);
           console.log("error", error);
