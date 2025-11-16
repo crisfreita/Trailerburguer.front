@@ -907,61 +907,62 @@ carrinho.method = {
         total: valorTotal,
       };
 
-      // se for pagamento online
-      if (PAGAMENTO_ONLINE) {
-        // seta a forma de pagamento
+      // 🔥 TRATAMENTO CORRETO DO PAGAMENTO ONLINE
+      // SE E SOMENTE SE o cliente selecionou pagamento online (id=5),
+      // redirecionar para pagamento.html
+      if (FORMA_SELECIONADA && FORMA_SELECIONADA.idformapagamento == 5) {
         dados.idformapagamento = 5;
 
-        // salva a sub order (antes da order) para obter os dados mais tarde
+        // salva a sub order (antes da order)
         app.method.gravarValorSessao(JSON.stringify(dados), "sub-order");
 
-        // avança para a próxima página para selecionar a forma de pagamento
+        // redireciona para a página de pagamento online
         window.location.href = "/pagamento.html";
-      } else {
-        // se não for, continua o fluxo normal
-
-        if (FORMA_SELECIONADA == null) {
-          app.method.mensagem("Selecione a forma de pagamento.");
-          return;
-        }
-
-        dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
-
-        // tudo ok, faz o pedido
-        app.method.loading(true);
-
-        app.method.post(
-          "/pedido",
-          JSON.stringify(dados),
-          (response) => {
-            console.log("response", response);
-            app.method.loading(false);
-
-            if (response.status === "error") {
-              app.method.mensagem(response.message);
-              return;
-            }
-
-            app.method.mensagem("Pedido realizado!", "green");
-
-            // salva o novo pedido
-            dados.order = response.order;
-
-            app.method.gravarValorSessao(JSON.stringify(dados), "order");
-
-            setTimeout(() => {
-              // limpa o carrinho
-              localStorage.removeItem("cart");
-              window.location.href = "/pedido.html";
-            }, 1000);
-          },
-          (error) => {
-            console.log("error", error);
-            app.method.loading(false);
-          },
-          true
-        );
+        return;
       }
+
+      // 🔥 OUTRAS FORMAS DE PAGAMENTO (fluxo normal)
+      if (FORMA_SELECIONADA == null) {
+        app.method.mensagem("Selecione a forma de pagamento.");
+        return;
+      }
+
+      dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
+
+      // tudo ok, faz o pedido
+      app.method.loading(true);
+
+      app.method.post(
+        "/pedido",
+        JSON.stringify(dados),
+        (response) => {
+          console.log("response", response);
+          app.method.loading(false);
+
+          if (response.status === "error") {
+            app.method.mensagem(response.message);
+            return;
+          }
+
+          app.method.mensagem("Pedido realizado!", "green");
+
+          // salva o novo pedido
+          dados.order = response.order;
+
+          app.method.gravarValorSessao(JSON.stringify(dados), "order");
+
+          setTimeout(() => {
+            // limpa o carrinho
+            localStorage.removeItem("cart");
+            window.location.href = "/pedido.html";
+          }, 1000);
+        },
+        (error) => {
+          console.log("error", error);
+          app.method.loading(false);
+        },
+        true
+      );
     } else {
       app.method.mensagem("Nenhum item no carrinho.");
     }
