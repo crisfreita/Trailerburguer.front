@@ -959,8 +959,19 @@ pagamento.method = {
       selected.getAttribute("data-bandeira") || ""
     ).toLowerCase();
 
-    if (!card_id || !customer_id || !bandeira) {
-      app.method.mensagem("Cartão inválido. Tente salvar novamente.", "red");
+    // 🔥 Bloqueia string 'null', vazio ou ausente
+    if (
+      !card_id ||
+      card_id === "null" ||
+      card_id === "" ||
+      !customer_id ||
+      customer_id === "null" ||
+      customer_id === ""
+    ) {
+      app.method.mensagem(
+        "⚠️ Cartão salvo inválido. Salve o cartão novamente.",
+        "red"
+      );
       return;
     }
 
