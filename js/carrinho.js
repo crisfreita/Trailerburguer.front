@@ -698,7 +698,6 @@ carrinho.method = {
   // carrega as formas de pagamento na tela
   carregarFormasPagamento: (list) => {
     if (list.length > 0) {
-      // limpar antes de preencher
       document.querySelector(
         "#modalActionsFormaPagamento .container-modal-actions"
       ).innerHTML = "";
@@ -710,13 +709,11 @@ carrinho.method = {
           "#modalActionsFormaPagamento .container-modal-actions"
         ).innerHTML += temp;
 
-        // última opção = botão remover
         if (i + 1 == list.length) {
           document.querySelector(
             "#modalActionsFormaPagamento .container-modal-actions"
           ).innerHTML += `
-          <a href="#!" class="color-red" onclick="carrinho.method.selecionarFormaPagamento('')">Remover</a>
-        `;
+          <a href="#!" class="color-red" onclick="carrinho.method.selecionarFormaPagamento('')">Remover</a>`;
         }
       });
     } else {
