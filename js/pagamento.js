@@ -203,6 +203,17 @@ pagamento.method = {
             selectedPaymentMethod,
             salvarCartao,
             telefonecliente,
+
+            // 🔥 ADICIONAR O PAYER COMPLETO !!!
+            payer: {
+              first_name: SUB_ORDER.nomecliente,
+              last_name: "",
+              email: SUB_ORDER.email || SUB_ORDER.emailcliente || "",
+              identification: {
+                type: "CPF",
+                number: SUB_ORDER.cpfcliente || "",
+              },
+            },
           };
 
           pagamento.method.gerarPagamento(dados);
