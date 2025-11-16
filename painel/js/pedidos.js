@@ -154,10 +154,10 @@ pedido.method = {
               ? "Levar maquininha de cartão"
               : "Pagamento na retirada do pedido";
         } else if (e.idformapagamento == 5) {
-          formapagamentoicon = "fas fa-credit-card";
-          formapagamento = "Cartão de Débito";
-          formapagamentodesc =
-            e.idtipoentrega == 1 ? "" : "Pagamento realizado online";
+          // 🔥 NOVO: Pagamento Online (Mercado Pago)
+          formapagamentoicon = "fas fa-mobile-alt";
+          formapagamento = "Pagamento Online";
+          formapagamentodesc = "Pago via Mercado Pago (Aprovado)";
         }
 
         // formata a data e hora de recebimento
