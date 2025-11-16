@@ -698,37 +698,27 @@ carrinho.method = {
   // carrega as formas de pagamento na tela
   carregarFormasPagamento: (list) => {
     if (list.length > 0) {
-      // antes, valida se tem a forma de pagamento online ativa
+      // pagamento online vira apenas mais uma opção
+      let pagamentoonline = list.some((e) => e.idformapagamento === 5);
 
-      let pagamentoonline = list.filter((e) => {
-        return e.idformapagamento === 5;
-      });
+      // NÃO esconder nada
+      PAGAMENTO_ONLINE = false;
+      document
+        .querySelector("#container-como-pagar")
+        .classList.remove("hidden");
+      document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
 
-      // existe pagamento online
-
-      if (pagamentoonline.length > 0) {
-        // aculta a opção de 'Como prefere pagar?'
-        document.querySelector("#container-como-pagar").classList.add("hidden");
-        document.getElementById("lblFazerPedido").innerText =
-          "Realizar Pagamento";
-        PAGAMENTO_ONLINE = true;
-      } else {
-        // exibe a opção de 'Como prefere pagar?'
-        document
-          .querySelector("#container-como-pagar")
-          .classList.remove("hidden");
-        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
-        PAGAMENTO_ONLINE = false;
-      }
+      // limpa e carrega as opções
+      document.querySelector(
+        "#modalActionsFormaPagamento .container-modal-actions"
+      ).innerHTML = "";
 
       list.forEach((e, i) => {
         let temp = `<a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">${e.nome}</a>`;
-
         document.querySelector(
           "#modalActionsFormaPagamento .container-modal-actions"
         ).innerHTML += temp;
 
-        // útlimo item
         if (i + 1 == list.length) {
           document.querySelector(
             "#modalActionsFormaPagamento .container-modal-actions"
