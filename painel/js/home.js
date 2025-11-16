@@ -66,8 +66,6 @@ home.method = {
     let debito = parseFloat((lista[0].debito * 100) / lista[0].total).toFixed(
       2
     );
-
-    // 🔥 NOVO: Pagamento Online (id = 5)
     let online = parseFloat((lista[0].online * 100) / lista[0].total).toFixed(
       2
     );
@@ -79,7 +77,6 @@ home.method = {
       "Débito (%)",
       "Online (%)",
     ];
-
     var VALORES = [pix, dinheiro, credito, debito, online];
 
     const ctx = document
@@ -94,21 +91,22 @@ home.method = {
           {
             data: VALORES,
             backgroundColor: [
-              "#be2d32", // pix
-              "#faab19", // dinheiro
-              "#f7a077", // crédito
-              "#fff2cc", // débito
-              "#1e90ff", // 🔥 online
+              "#be2d32",
+              "#faab19",
+              "#f7a077",
+              "#fff2cc",
+              "#d4edda",
             ],
           },
         ],
       },
       options: {
         responsive: true,
-        plugins: {
-          legend: {
-            display: true,
-          },
+        legend: {
+          display: false,
+        },
+        title: {
+          display: false,
         },
       },
     });
