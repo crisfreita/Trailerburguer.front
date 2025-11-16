@@ -157,7 +157,7 @@ pedido.method = {
           // 🔥 NOVO: Pagamento Online (Mercado Pago)
           formapagamentoicon = "fas fa-mobile-alt";
           formapagamento = "Pagamento Online";
-          formapagamentodesc = "Pago via Mercado Pago (Aprovado)";
+          formapagamentodesc = "";
         }
 
         // formata a data e hora de recebimento
