@@ -749,63 +749,71 @@ carrinho.method = {
       document.querySelector("#lblFormaPagamentoSelecionada").innerText =
         FORMA_SELECIONADA.nome;
 
-      // se for Pix
-      if (FORMA_SELECIONADA.idformapagamento == 1) {
+      // PAGAMENTO ONLINE
+      if (FORMA_SELECIONADA.idformapagamento == 5) {
+        document.querySelector("#lblDescFormaPagamentoSelecionada").innerText =
+          "Pagamento online via Mercado Pago";
         document.querySelector(
-          "#lblDescFormaPagamentoSelecionada"
-        ).innerText = `Pagamento na entrega do pedido.`;
+          "#iconFormaPagamentoSelecionada"
+        ).innerHTML = `<i class="fas fa-qrcode"></i>`;
+
+        // 🔥 MUDA O BOTÃO AUTOMATICAMENTE
+        document.getElementById("lblFazerPedido").innerText =
+          "Realizar Pagamento";
+      }
+      // PIX
+      else if (FORMA_SELECIONADA.idformapagamento == 1) {
+        document.querySelector("#lblDescFormaPagamentoSelecionada").innerText =
+          "Pagamento na entrega do pedido.";
         document.querySelector(
           "#iconFormaPagamentoSelecionada"
         ).innerHTML = `<i class="fas fa-receipt"></i>`;
+
+        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
       }
-      // se for dinheiro
+      // DINHEIRO
       else if (FORMA_SELECIONADA.idformapagamento == 2) {
         let troco = prompt("Qual o valor do troco?");
-        if (troco != null) {
-          // valida se o troco está correto
-          let _teste = parseFloat(troco);
+        let _teste = parseFloat(troco);
 
-          if (isNaN(_teste) || troco.trim() == "" || _teste <= 1) {
-            TROCO = 0;
-            document.querySelector(
-              "#lblDescFormaPagamentoSelecionada"
-            ).innerText = `Pagamento na entrega do pedido.`;
-          } else {
-            TROCO = _teste;
-            document.querySelector(
-              "#lblDescFormaPagamentoSelecionada"
-            ).innerText = `Troco para: ${_teste
-              .toFixed(2)
-              .replace(".", ",")} reais.`;
-          }
+        if (!isNaN(_teste) && _teste > 1) {
+          TROCO = _teste;
+          document.querySelector(
+            "#lblDescFormaPagamentoSelecionada"
+          ).innerText = `Troco para: ${_teste.toFixed(2).replace(".", ",")}`;
         } else {
           document.querySelector(
             "#lblDescFormaPagamentoSelecionada"
-          ).innerText = `Pagamento na entrega do pedido.`;
+          ).innerText = "Pagamento na entrega do pedido.";
         }
 
         document.querySelector(
           "#iconFormaPagamentoSelecionada"
         ).innerHTML = `<i class="fas fa-coins"></i>`;
+
+        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
       }
-      // se for cartão
+      // CRÉDITO / DÉBITO
       else {
-        document.querySelector(
-          "#lblDescFormaPagamentoSelecionada"
-        ).innerText = `Pagamento na entrega do pedido.`;
+        document.querySelector("#lblDescFormaPagamentoSelecionada").innerText =
+          "Pagamento na entrega do pedido.";
         document.querySelector(
           "#iconFormaPagamentoSelecionada"
         ).innerHTML = `<i class="fas fa-credit-card"></i>`;
+
+        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
       }
     } else {
+      // remover forma de pagamento
       document
         .querySelector("#cardFormaPagamentoSelecionada")
         .classList.add("hidden");
       document
         .querySelector("#cardAddFormaPagamento")
         .classList.remove("hidden");
-
       FORMA_SELECIONADA = null;
+
+      document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
     }
 
     carrinho.method.fecharModalActionsFormaPagamento();
