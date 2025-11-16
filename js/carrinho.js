@@ -697,35 +697,47 @@ carrinho.method = {
 
   // carrega as formas de pagamento na tela
   carregarFormasPagamento: (list) => {
-    console.log("Formas recebidas:", list);
+    if (list.length > 0) {
+      // antes, valida se tem a forma de pagamento online ativa
 
-    const container = document.querySelector(
-      "#modalActionsFormaPagamento .container-modal-actions"
-    );
+      let pagamentoonline = list.filter((e) => {
+        return e.idformapagamento === 5;
+      });
 
-    // limpa antes
-    container.innerHTML = "";
+      // existe pagamento online
 
-    if (list.length === 0) {
-      document.querySelector("#formasPagamento").classList.add("hidden");
-      return;
+      if (pagamentoonline.length > 0) {
+        // aculta a opção de 'Como prefere pagar?'
+        document.querySelector("#container-como-pagar").classList.add("hidden");
+        document.getElementById("lblFazerPedido").innerText =
+          "Realizar Pagamento";
+        PAGAMENTO_ONLINE = true;
+      } else {
+        // exibe a opção de 'Como prefere pagar?'
+        document
+          .querySelector("#container-como-pagar")
+          .classList.remove("hidden");
+        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
+        PAGAMENTO_ONLINE = false;
+      }
+
+      list.forEach((e, i) => {
+        let temp = `<a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">${e.nome}</a>`;
+
+        document.querySelector(
+          "#modalActionsFormaPagamento .container-modal-actions"
+        ).innerHTML += temp;
+
+        // útlimo item
+        if (i + 1 == list.length) {
+          document.querySelector(
+            "#modalActionsFormaPagamento .container-modal-actions"
+          ).innerHTML += `<a href="#!" class="color-red" onclick="carrinho.method.selecionarFormaPagamento('')">Remover</a>`;
+        }
+      });
+    } else {
+      document.querySelector("#formasPagamento").remove();
     }
-
-    document.querySelector("#formasPagamento").classList.remove("hidden");
-
-    // Preenche opções
-    list.forEach((e, i) => {
-      container.innerHTML += `
-      <a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">
-        ${e.nome}
-      </a>`;
-    });
-
-    // botão remover
-    container.innerHTML += `
-    <a href="#!" class="color-red" onclick="carrinho.method.selecionarFormaPagamento('')">
-      Remover
-    </a>`;
   },
 
   // método que seleciona a forma de pagamento
@@ -747,16 +759,8 @@ carrinho.method = {
       document.querySelector("#lblFormaPagamentoSelecionada").innerText =
         FORMA_SELECIONADA.nome;
 
-      // PAGAMENTO ONLINE
-      if (FORMA_SELECIONADA.idformapagamento == 5) {
-        document.querySelector("#lblDescFormaPagamentoSelecionada").innerText =
-          "Pagamento online via Mercado Pago";
-        document.querySelector(
-          "#iconFormaPagamentoSelecionada"
-        ).innerHTML = `<i class="fas fa-qrcode"></i>`;
-      }
-      // PIX
-      else if (FORMA_SELECIONADA.idformapagamento == 1) {
+      // se for Pix
+      if (FORMA_SELECIONADA.idformapagamento == 1) {
         document.querySelector(
           "#lblDescFormaPagamentoSelecionada"
         ).innerText = `Pagamento na entrega do pedido.`;
@@ -764,16 +768,18 @@ carrinho.method = {
           "#iconFormaPagamentoSelecionada"
         ).innerHTML = `<i class="fas fa-receipt"></i>`;
       }
-      // DINHEIRO
+      // se for dinheiro
       else if (FORMA_SELECIONADA.idformapagamento == 2) {
         let troco = prompt("Qual o valor do troco?");
         if (troco != null) {
+          // valida se o troco está correto
           let _teste = parseFloat(troco);
-          if (isNaN(_teste) || _teste <= 1) {
+
+          if (isNaN(_teste) || troco.trim() == "" || _teste <= 1) {
             TROCO = 0;
             document.querySelector(
               "#lblDescFormaPagamentoSelecionada"
-            ).innerText = "Pagamento na entrega do pedido.";
+            ).innerText = `Pagamento na entrega do pedido.`;
           } else {
             TROCO = _teste;
             document.querySelector(
@@ -782,12 +788,17 @@ carrinho.method = {
               .toFixed(2)
               .replace(".", ",")} reais.`;
           }
+        } else {
+          document.querySelector(
+            "#lblDescFormaPagamentoSelecionada"
+          ).innerText = `Pagamento na entrega do pedido.`;
         }
+
         document.querySelector(
           "#iconFormaPagamentoSelecionada"
         ).innerHTML = `<i class="fas fa-coins"></i>`;
       }
-      // CARTÃO (crédito/débito)
+      // se for cartão
       else {
         document.querySelector(
           "#lblDescFormaPagamentoSelecionada"
@@ -797,13 +808,14 @@ carrinho.method = {
         ).innerHTML = `<i class="fas fa-credit-card"></i>`;
       }
     } else {
-      FORMA_SELECIONADA = null;
       document
         .querySelector("#cardFormaPagamentoSelecionada")
         .classList.add("hidden");
       document
         .querySelector("#cardAddFormaPagamento")
         .classList.remove("hidden");
+
+      FORMA_SELECIONADA = null;
     }
 
     carrinho.method.fecharModalActionsFormaPagamento();
@@ -829,100 +841,132 @@ carrinho.method = {
 
   // botão de realizar o pedido
   fazerPedido: () => {
-    if (CARRINHO_ATUAL.length == 0) {
-      app.method.mensagem("Nenhum item no carrinho.");
-      return;
-    }
+    if (CARRINHO_ATUAL.length > 0) {
+      // faz as validações
 
-    let checkEntrega = document.querySelector("#chkEntrega").checked;
-    let checkRetirada = document.querySelector("#chkRetirada").checked;
+      let checkEntrega = document.querySelector("#chkEntrega").checked;
+      let checkRetirada = document.querySelector("#chkRetirada").checked;
 
-    if (!checkEntrega && !checkRetirada) {
-      app.method.mensagem("Selecione entrega ou retirada.");
-      return;
-    }
-
-    let enderecoAtual = app.method.obterValorSessao("address");
-    if (checkEntrega && enderecoAtual == undefined) {
-      app.method.mensagem("Informe o endereço de entrega.");
-      return;
-    }
-
-    let nome = $("#txtNomeSobrenome").val().trim();
-    let celular = $("#txtCelular").val().trim();
-
-    if (nome.length <= 0 || celular.length <= 0) {
-      app.method.mensagem("Preencha nome e celular.");
-      return;
-    }
-
-    // calcular total
-    let total = 0;
-    CARRINHO_ATUAL.forEach((item) => {
-      let subtotal = item.quantidade * item.valor;
-      if (item.opcionais?.length > 0) {
-        item.opcionais.forEach((op) => {
-          subtotal += item.quantidade * op.valoropcional;
-        });
-      }
-      total += subtotal;
-    });
-
-    if (checkEntrega && TAXA_ATUAL > 0) total += TAXA_ATUAL;
-
-    let dados = {
-      entrega: checkEntrega,
-      retirada: checkRetirada,
-      cart: CARRINHO_ATUAL,
-      endereco: enderecoAtual ? JSON.parse(enderecoAtual) : null,
-      idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
-      idtaxaentrega: TAXA_ATUAL_ID,
-      taxaentrega: TAXA_ATUAL,
-      troco: TROCO,
-      nomecliente: nome,
-      telefonecliente: celular,
-      total: total,
-    };
-
-    // PAGAMENTO ONLINE (id=5)
-    if (FORMA_SELECIONADA && FORMA_SELECIONADA.idformapagamento == 5) {
-      dados.idformapagamento = 5;
-
-      app.method.gravarValorSessao(JSON.stringify(dados), "sub-order");
-
-      window.location.href = "/pagamento.html";
-      return;
-    }
-
-    // OUTRAS FORMAS DE PAGAMENTO
-    if (!FORMA_SELECIONADA) {
-      app.method.mensagem("Selecione a forma de pagamento.");
-      return;
-    }
-
-    dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
-
-    // enviar pedido normal…
-    app.method.loading(true);
-
-    app.method.post("/pedido", JSON.stringify(dados), (response) => {
-      app.method.loading(false);
-
-      if (response.status === "error") {
-        app.method.mensagem(response.message);
+      if (!checkEntrega && !checkRetirada) {
+        app.method.mensagem("Selecione entrega ou retirada.");
         return;
       }
 
-      app.method.mensagem("Pedido realizado!", "green");
+      // obtem o endereco selecionado do localstorage
+      let enderecoAtual = app.method.obterValorSessao("address");
 
-      dados.order = response.order;
-      app.method.gravarValorSessao(JSON.stringify(dados), "order");
+      if (checkEntrega && enderecoAtual == undefined) {
+        app.method.mensagem("Informe o endereço de entrega.");
+        return;
+      }
 
-      setTimeout(() => {
-        localStorage.removeItem("cart");
-        window.location.href = "/pedido.html";
-      }, 1000);
-    });
+      let enderecoSelecionado =
+        enderecoAtual != undefined ? JSON.parse(enderecoAtual) : null;
+
+      let nome = $("#txtNomeSobrenome").val().trim();
+      let celular = $("#txtCelular").val().trim();
+
+      if (nome.length <= 0) {
+        app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
+        return;
+      }
+
+      if (celular.length <= 0) {
+        app.method.mensagem("Informe o Celular, por favor.");
+        return;
+      }
+
+      // 🔹 CALCULA O TOTAL
+      let valorTotal = 0;
+      CARRINHO_ATUAL.forEach((item) => {
+        let subtotal = item.quantidade * item.valor;
+
+        if (item.opcionais?.length > 0) {
+          item.opcionais.forEach((op) => {
+            subtotal += item.quantidade * op.valoropcional;
+          });
+        }
+
+        valorTotal += subtotal;
+      });
+
+      // adiciona taxa de entrega se houver
+      if (checkEntrega && TAXA_ATUAL > 0) {
+        valorTotal += TAXA_ATUAL;
+      }
+
+      var dados = {
+        entrega: checkEntrega,
+        retirada: checkRetirada,
+        cart: CARRINHO_ATUAL,
+        endereco: enderecoSelecionado,
+        idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
+        idtaxaentrega: TAXA_ATUAL_ID,
+        taxaentrega: TAXA_ATUAL,
+        troco: TROCO,
+        nomecliente: nome,
+        telefonecliente: celular,
+        total: valorTotal,
+      };
+
+      // se for pagamento online
+      if (PAGAMENTO_ONLINE) {
+        // seta a forma de pagamento
+        dados.idformapagamento = 5;
+
+        // salva a sub order (antes da order) para obter os dados mais tarde
+        app.method.gravarValorSessao(JSON.stringify(dados), "sub-order");
+
+        // avança para a próxima página para selecionar a forma de pagamento
+        window.location.href = "/pagamento.html";
+      } else {
+        // se não for, continua o fluxo normal
+
+        if (FORMA_SELECIONADA == null) {
+          app.method.mensagem("Selecione a forma de pagamento.");
+          return;
+        }
+
+        dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
+
+        // tudo ok, faz o pedido
+        app.method.loading(true);
+
+        app.method.post(
+          "/pedido",
+          JSON.stringify(dados),
+          (response) => {
+            console.log("response", response);
+            app.method.loading(false);
+
+            if (response.status === "error") {
+              app.method.mensagem(response.message);
+              return;
+            }
+
+            app.method.mensagem("Pedido realizado!", "green");
+
+            // salva o novo pedido
+            dados.order = response.order;
+
+            app.method.gravarValorSessao(JSON.stringify(dados), "order");
+
+            setTimeout(() => {
+              // limpa o carrinho
+              localStorage.removeItem("cart");
+              window.location.href = "/pedido.html";
+            }, 1000);
+          },
+          (error) => {
+            console.log("error", error);
+            app.method.loading(false);
+          },
+          true
+        );
+      }
+    } else {
+      app.method.mensagem("Nenhum item no carrinho.");
+    }
   },
 
   // fazerPedido: () => {
