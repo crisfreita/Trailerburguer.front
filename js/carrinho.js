@@ -838,10 +838,9 @@ carrinho.method = {
   // ------ REALIZAR PEDIDO ------
 
   // botão de realizar o pedido
+
   fazerPedido: () => {
     if (CARRINHO_ATUAL.length > 0) {
-      // faz as validações
-
       let checkEntrega = document.querySelector("#chkEntrega").checked;
       let checkRetirada = document.querySelector("#chkRetirada").checked;
 
@@ -850,9 +849,7 @@ carrinho.method = {
         return;
       }
 
-      // obtem o endereco selecionado do localstorage
       let enderecoAtual = app.method.obterValorSessao("address");
-
       if (checkEntrega && enderecoAtual == undefined) {
         app.method.mensagem("Informe o endereço de entrega.");
         return;
@@ -868,31 +865,30 @@ carrinho.method = {
         app.method.mensagem("Informe o Nome e Sobrenome, por favor.");
         return;
       }
-
       if (celular.length <= 0) {
         app.method.mensagem("Informe o Celular, por favor.");
         return;
       }
-
-      // 🔹 CALCULA O TOTAL
-      let valorTotal = 0;
-      CARRINHO_ATUAL.forEach((item) => {
-        let subtotal = item.quantidade * item.valor;
-
-        if (item.opcionais?.length > 0) {
-          item.opcionais.forEach((op) => {
-            subtotal += item.quantidade * op.valoropcional;
-          });
-        }
-
-        valorTotal += subtotal;
-      });
-
-      // adiciona taxa de entrega se houver
-      if (checkEntrega && TAXA_ATUAL > 0) {
-        valorTotal += TAXA_ATUAL;
+      if (FORMA_SELECIONADA == null) {
+        app.method.mensagem("Selecione a forma de pagamento.");
+        return;
       }
 
+      // --- Calcula o total
+      let valorTotal = 0;
+      CARRINHO_ATUAL.forEach((item) => {
+        let subtotalItem = item.quantidade * item.valor;
+        if (item.opcionais && item.opcionais.length > 0) {
+          item.opcionais.forEach((opcional) => {
+            subtotalItem += item.quantidade * opcional.valoropcional;
+          });
+        }
+        valorTotal += subtotalItem;
+      });
+
+      if (checkEntrega) valorTotal += TAXA_ATUAL;
+
+      // --- Cria o objeto base do pedido
       var dados = {
         entrega: checkEntrega,
         retirada: checkRetirada,
@@ -901,68 +897,58 @@ carrinho.method = {
         idtaxaentregatipo: TAXAS_ENTREGA[0].idtaxaentregatipo,
         idtaxaentrega: TAXA_ATUAL_ID,
         taxaentrega: TAXA_ATUAL,
+        idformapagamento: FORMA_SELECIONADA.idformapagamento,
         troco: TROCO,
         nomecliente: nome,
         telefonecliente: celular,
         total: valorTotal,
       };
 
-      // 🔥 TRATAMENTO CORRETO DO PAGAMENTO ONLINE
-      // SE E SOMENTE SE o cliente selecionou pagamento online (id=5),
-      // redirecionar para pagamento.html
-      if (FORMA_SELECIONADA && FORMA_SELECIONADA.idformapagamento == 5) {
-        dados.idformapagamento = 5;
-
-        // salva a sub order (antes da order)
+      // ============================================================
+      // 🔥 SE FOR PAGAMENTO ONLINE → NÃO ENVIA WHATSAPP AGORA
+      // ============================================================
+      if (dados.idformapagamento == 5) {
+        // Salva sub-order para pagamento.html
         app.method.gravarValorSessao(JSON.stringify(dados), "sub-order");
 
-        // redireciona para a página de pagamento online
+        // Redireciona para pagar
         window.location.href = "/pagamento.html";
         return;
       }
 
-      // 🔥 OUTRAS FORMAS DE PAGAMENTO (fluxo normal)
-      if (FORMA_SELECIONADA == null) {
-        app.method.mensagem("Selecione a forma de pagamento.");
-        return;
-      }
+      // ============================================================
+      // 🔥 PAGAMENTOS NORMAIS — SALVA E ENVIA WHATSAPP
+      // ============================================================
 
-      dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
-
-      // tudo ok, faz o pedido
       app.method.loading(true);
 
-      app.method.post(
-        "/pedido",
-        JSON.stringify(dados),
-        (response) => {
-          console.log("response", response);
-          app.method.loading(false);
+      app.method.post("/pedido", JSON.stringify(dados), (response) => {
+        console.log("📥 RESPOSTA BACKEND:", response);
+        app.method.loading(false);
 
-          if (response.status === "error") {
-            app.method.mensagem(response.message);
-            return;
-          }
+        if (response.status === "error") {
+          app.method.mensagem(response.message);
+          return;
+        }
 
-          app.method.mensagem("Pedido realizado!", "green");
+        app.method.mensagem("Pedido realizado com sucesso!", "green");
 
-          // salva o novo pedido
-          dados.order = response.order;
+        // 🔹 Adiciona id do pedido retornado
+        dados.idpedido = response.order.idpedido;
+        dados.order = response.order;
 
-          app.method.gravarValorSessao(JSON.stringify(dados), "order");
+        // 🔹 Salva o pedido no localStorage
+        app.method.gravarValorSessao(JSON.stringify(dados), "order");
 
-          setTimeout(() => {
-            // limpa o carrinho
-            localStorage.removeItem("cart");
-            window.location.href = "/pedido.html";
-          }, 1000);
-        },
-        (error) => {
-          console.log("error", error);
-          app.method.loading(false);
-        },
-        true
-      );
+        // 🔹 Envia WhatsApp apenas em pagamentos normais
+        carrinho.method.finalizarPedido(dados);
+
+        // 🔹 Redireciona
+        setTimeout(() => {
+          localStorage.removeItem("cart");
+          window.location.href = `/pedido.html?id=${dados.idpedido}`;
+        }, 1500);
+      });
     } else {
       app.method.mensagem("Nenhum item no carrinho.");
     }
