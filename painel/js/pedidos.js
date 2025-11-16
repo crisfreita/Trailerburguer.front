@@ -153,6 +153,11 @@ pedido.method = {
             e.idtipoentrega == 1
               ? "Levar maquininha de cartão"
               : "Pagamento na retirada do pedido";
+        } else if (e.idformapagamento == 5) {
+          formapagamentoicon = "fas fa-credit-card";
+          formapagamento = "Cartão de Débito";
+          formapagamentodesc =
+            e.idtipoentrega == 1 ? "" : "Pagamento realizado online";
         }
 
         // formata a data e hora de recebimento
@@ -272,22 +277,34 @@ pedido.method = {
       "Pagamento na entrega do pedido";
 
     if (data.idformapagamento == 1) {
+      // PIX
       document.querySelector("#lblFormaPagamentoIcon").innerHTML =
         '<i class="fas fa-receipt"></i>';
+      document.querySelector("#lblFormaPagamentoDescricao").innerHTML =
+        "Pagamento via PIX";
     } else if (data.idformapagamento == 2) {
+      // Dinheiro
       document.querySelector("#lblFormaPagamentoIcon").innerHTML =
         '<i class="fas fa-coins"></i>';
       document.querySelector("#lblFormaPagamentoDescricao").innerHTML =
         data.troco != null
           ? `Troco para ${data.troco.toFixed(2).replace(".", ",")} reais`
           : "Pagamento na entrega do pedido";
-    } else {
+    } else if (data.idformapagamento == 3 || data.idformapagamento == 4) {
+      // Cartão físico (maquininha)
       document.querySelector("#lblFormaPagamentoIcon").innerHTML =
         '<i class="fas fa-credit-card"></i>';
       document.querySelector("#lblFormaPagamentoDescricao").innerHTML =
         data.idtipoentrega == 1
           ? "Levar maquininha de cartão"
           : "Pagamento na retirada do pedido";
+    } else if (data.idformapagamento == 5) {
+      // 🔥 Pagamento Online (Mercado Pago)
+      document.querySelector("#lblFormaPagamentoIcon").innerHTML =
+        '<i class="fas fa-mobile-alt"></i>';
+
+      document.querySelector("#lblFormaPagamentoDescricao").innerHTML =
+        "Pagamento online via Mercado Pago (Aprovado)";
     }
 
     if (data.idtipoentrega == 1) {
