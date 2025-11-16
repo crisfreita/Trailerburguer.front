@@ -332,6 +332,184 @@ pagamento.method = {
     }
   },
 
+  carregarCartoesSalvos: () => {
+    const telefone = SUB_ORDER?.telefonecliente;
+    if (!telefone) return;
+
+    const container = document.getElementById("savedCardsContainer");
+    if (!container) return;
+
+    container.innerHTML = `<p class="text-muted mb-0">Carregando cartões...</p>`;
+
+    app.method.get(
+      `/pagamento/cartoes?telefonecliente=${encodeURIComponent(telefone)}`,
+      (resp) => {
+        const lista = Array.isArray(resp) ? resp : resp?.data || [];
+
+        if (!lista || !lista.length) {
+          container.innerHTML = `<p class="text-muted mb-0">Nenhum cartão salvo ainda.</p>`;
+          return;
+        }
+
+        let html = `<h5 class="text-center mb-3">Cartões salvos</h5>`;
+        lista.forEach((c) => {
+          const bandeira = (c.bandeira || "credit-card").toLowerCase();
+          const ultimos = c.ultimos_digitos || "****";
+          // usamos data-* para levar card_id/customer_id/bandeira
+          html += `
+          <div class="form-check mt-2 text-start">
+            <input class="form-check-input" type="radio" name="savedCard" 
+                   id="card-${c.idcartao}"
+                   data-card-id="${c.card_id}"
+                   data-customer-id="${c.customer_id}"
+                   data-bandeira="${bandeira}">
+            <label class="form-check-label" for="card-${c.idcartao}">
+              <i class="fab fa-cc-${bandeira}" style="font-size:18px;margin-right:6px;"></i>
+              •••• ${ultimos}
+            </label>
+          </div>
+        `;
+        });
+
+        html += `
+        <div class="mt-3">
+          <button class="btn btn-primary w-100" onclick="pagamento.method.pagarComCartaoSalvo()">
+            <i class="fas fa-credit-card"></i> Pagar com cartão salvo
+          </button>
+        </div>
+      `;
+
+        container.innerHTML = html;
+      },
+      (err) => {
+        console.error("Erro ao buscar cartões salvos:", err);
+        container.innerHTML = `<p class="text-danger mb-0">Erro ao carregar cartões salvos.</p>`;
+      },
+      true
+    );
+  },
+
+  pagarComCartaoSalvo: () => {
+    const selected = document.querySelector('input[name="savedCard"]:checked');
+    if (!selected) {
+      app.method.mensagem("Selecione um cartão salvo!", "red");
+      return;
+    }
+
+    const card_id = selected.getAttribute("data-card-id");
+    const customer_id = selected.getAttribute("data-customer-id");
+    const bandeira = (
+      selected.getAttribute("data-bandeira") || ""
+    ).toLowerCase();
+
+    // 🔥 Bloqueia string 'null', vazio ou ausente
+    if (
+      !card_id ||
+      card_id === "null" ||
+      card_id === "" ||
+      !customer_id ||
+      customer_id === "null" ||
+      customer_id === ""
+    ) {
+      app.method.mensagem(
+        "⚠️ Cartão salvo inválido. Salve o cartão novamente.",
+        "red"
+      );
+      return;
+    }
+
+    const dados = {
+      selectedPaymentMethod: "credit_card",
+      salvarCartao: false,
+      telefonecliente: SUB_ORDER?.telefonecliente || "",
+      cartaoSalvo: {
+        customer_id,
+        card_id,
+        payment_method_id: bandeira,
+      },
+      formData: { token: null }, // força ausência de token
+      pedido: SUB_ORDER,
+    };
+
+    app.method.loading(true);
+    app.method.post(
+      "/pagamento",
+      JSON.stringify(dados),
+      (response) => {
+        app.method.loading(false);
+        console.log("Pagamento com cartão salvo:", response);
+
+        if (response.status === "error") {
+          app.method.mensagem(response.message || "Erro no pagamento.", "red");
+          return;
+        }
+
+        if (response.status_mp === "approved") {
+          app.method.mensagem(
+            "✅ Pagamento aprovado! Seu pedido foi confirmado.",
+            "green"
+          );
+          setTimeout(() => (window.location.href = "/pedido.html"), 2000);
+          return;
+        }
+
+        if (
+          response.status_mp === "in_process" ||
+          response.status_mp === "pending"
+        ) {
+          app.method.mensagem("⏳ Pagamento em análise.", "orange");
+          return;
+        }
+
+        app.method.mensagem(
+          "⚠️ Pagamento não aprovado. Verifique o cartão.",
+          "red"
+        );
+      },
+      (error) => {
+        app.method.loading(false);
+        console.error("Erro pagamento cartão salvo:", error);
+        app.method.mensagem("Erro no servidor de pagamento.", "red");
+      },
+      true
+    );
+  },
+
+  getDadosPedidoCompleto: () => {
+    // tenta pegar o pedido salvo na sessão (mantido pelo carrinho)
+    let dadosPedido = null;
+
+    try {
+      const subOrderData =
+        app.method.obterValorSessao("sub-order") ||
+        sessionStorage.getItem("sub-order") ||
+        localStorage.getItem("sub-order");
+
+      if (subOrderData) {
+        dadosPedido = JSON.parse(subOrderData);
+      }
+    } catch (e) {
+      console.warn("⚠️ Falha ao carregar sub-order:", e);
+    }
+
+    // valida se tem os dados essenciais
+    if (
+      !dadosPedido ||
+      !dadosPedido.cart ||
+      !dadosPedido.nomecliente ||
+      !dadosPedido.telefonecliente
+    ) {
+      console.warn(
+        "⚠️ Dados do pedido incompletos. Tentando recuperar do carrinho..."
+      );
+      const cartData = localStorage.getItem("cart");
+      if (cartData)
+        dadosPedido = { ...dadosPedido, cart: JSON.parse(cartData) };
+    }
+
+    return dadosPedido;
+  },
+
   gerarPagamento: (dados) => {
     app.method.loading(true);
 
@@ -887,185 +1065,6 @@ pagamento.method = {
   //    }
   //   }, 7000); // verifica a cada 7 segundos
   //  },
-
-  // === CARTÕES SALVOS ===
-  carregarCartoesSalvos: () => {
-    const telefone = SUB_ORDER?.telefonecliente;
-    if (!telefone) return;
-
-    const container = document.getElementById("savedCardsContainer");
-    if (!container) return;
-
-    container.innerHTML = `<p class="text-muted mb-0">Carregando cartões...</p>`;
-
-    app.method.get(
-      `/pagamento/cartoes?telefonecliente=${encodeURIComponent(telefone)}`,
-      (resp) => {
-        const lista = Array.isArray(resp) ? resp : resp?.data || [];
-
-        if (!lista || !lista.length) {
-          container.innerHTML = `<p class="text-muted mb-0">Nenhum cartão salvo ainda.</p>`;
-          return;
-        }
-
-        let html = `<h5 class="text-center mb-3">Cartões salvos</h5>`;
-        lista.forEach((c) => {
-          const bandeira = (c.bandeira || "credit-card").toLowerCase();
-          const ultimos = c.ultimos_digitos || "****";
-          // usamos data-* para levar card_id/customer_id/bandeira
-          html += `
-          <div class="form-check mt-2 text-start">
-            <input class="form-check-input" type="radio" name="savedCard" 
-                   id="card-${c.idcartao}"
-                   data-card-id="${c.card_id}"
-                   data-customer-id="${c.customer_id}"
-                   data-bandeira="${bandeira}">
-            <label class="form-check-label" for="card-${c.idcartao}">
-              <i class="fab fa-cc-${bandeira}" style="font-size:18px;margin-right:6px;"></i>
-              •••• ${ultimos}
-            </label>
-          </div>
-        `;
-        });
-
-        html += `
-        <div class="mt-3">
-          <button class="btn btn-primary w-100" onclick="pagamento.method.pagarComCartaoSalvo()">
-            <i class="fas fa-credit-card"></i> Pagar com cartão salvo
-          </button>
-        </div>
-      `;
-
-        container.innerHTML = html;
-      },
-      (err) => {
-        console.error("Erro ao buscar cartões salvos:", err);
-        container.innerHTML = `<p class="text-danger mb-0">Erro ao carregar cartões salvos.</p>`;
-      },
-      true
-    );
-  },
-
-  pagarComCartaoSalvo: () => {
-    const selected = document.querySelector('input[name="savedCard"]:checked');
-    if (!selected) {
-      app.method.mensagem("Selecione um cartão salvo!", "red");
-      return;
-    }
-
-    const card_id = selected.getAttribute("data-card-id");
-    const customer_id = selected.getAttribute("data-customer-id");
-    const bandeira = (
-      selected.getAttribute("data-bandeira") || ""
-    ).toLowerCase();
-
-    // 🔥 Bloqueia string 'null', vazio ou ausente
-    if (
-      !card_id ||
-      card_id === "null" ||
-      card_id === "" ||
-      !customer_id ||
-      customer_id === "null" ||
-      customer_id === ""
-    ) {
-      app.method.mensagem(
-        "⚠️ Cartão salvo inválido. Salve o cartão novamente.",
-        "red"
-      );
-      return;
-    }
-
-    const dados = {
-      selectedPaymentMethod: "credit_card",
-      salvarCartao: false,
-      telefonecliente: SUB_ORDER?.telefonecliente || "",
-      cartaoSalvo: {
-        customer_id,
-        card_id,
-        payment_method_id: bandeira,
-      },
-      formData: { token: null }, // força ausência de token
-      pedido: SUB_ORDER,
-    };
-
-    app.method.loading(true);
-    app.method.post(
-      "/pagamento",
-      JSON.stringify(dados),
-      (response) => {
-        app.method.loading(false);
-        console.log("Pagamento com cartão salvo:", response);
-
-        if (response.status === "error") {
-          app.method.mensagem(response.message || "Erro no pagamento.", "red");
-          return;
-        }
-
-        if (response.status_mp === "approved") {
-          app.method.mensagem(
-            "✅ Pagamento aprovado! Seu pedido foi confirmado.",
-            "green"
-          );
-          setTimeout(() => (window.location.href = "/pedido.html"), 2000);
-          return;
-        }
-
-        if (
-          response.status_mp === "in_process" ||
-          response.status_mp === "pending"
-        ) {
-          app.method.mensagem("⏳ Pagamento em análise.", "orange");
-          return;
-        }
-
-        app.method.mensagem(
-          "⚠️ Pagamento não aprovado. Verifique o cartão.",
-          "red"
-        );
-      },
-      (error) => {
-        app.method.loading(false);
-        console.error("Erro pagamento cartão salvo:", error);
-        app.method.mensagem("Erro no servidor de pagamento.", "red");
-      },
-      true
-    );
-  },
-
-  getDadosPedidoCompleto: () => {
-    // tenta pegar o pedido salvo na sessão (mantido pelo carrinho)
-    let dadosPedido = null;
-
-    try {
-      const subOrderData =
-        app.method.obterValorSessao("sub-order") ||
-        sessionStorage.getItem("sub-order") ||
-        localStorage.getItem("sub-order");
-
-      if (subOrderData) {
-        dadosPedido = JSON.parse(subOrderData);
-      }
-    } catch (e) {
-      console.warn("⚠️ Falha ao carregar sub-order:", e);
-    }
-
-    // valida se tem os dados essenciais
-    if (
-      !dadosPedido ||
-      !dadosPedido.cart ||
-      !dadosPedido.nomecliente ||
-      !dadosPedido.telefonecliente
-    ) {
-      console.warn(
-        "⚠️ Dados do pedido incompletos. Tentando recuperar do carrinho..."
-      );
-      const cartData = localStorage.getItem("cart");
-      if (cartData)
-        dadosPedido = { ...dadosPedido, cart: JSON.parse(cartData) };
-    }
-
-    return dadosPedido;
-  },
 
   enviarPedidoWhatsApp: () => {
     const subOrderData = app.method.obterValorSessao("sub-order");
