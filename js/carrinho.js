@@ -1158,7 +1158,7 @@ carrinho.method = {
     texto += `\n\n💰 *Valor total do pedido:* R$ ${dados.total.toFixed(2)}`;
 
     // 🔗 Link para acompanhar pedido
-    texto += `\n\n📍 *Acompanhe seu pedido:* http://localhost:3000/pedido.html?id=${dados.idpedido}`;
+    texto += `\n\n📍 *Acompanhe seu pedido:* http://www.trailerburguer.com.br/pedido.html?id=${dados.idpedido}`;
     texto += `\n\n*Obrigado pela preferência!* 🙏`;
 
     let encode = encodeURIComponent(texto);
