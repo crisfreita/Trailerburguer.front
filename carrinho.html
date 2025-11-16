@@ -387,6 +387,27 @@
       </div>
     </div>
 
+    <!-- Forma de pagamento selecionada -->
+    <div id="cardFormaPagamentoSelecionada" class="hidden card mt-2 p-2">
+      <div class="d-flex align-items-center">
+        <span id="iconFormaPagamentoSelecionada" style="font-size: 22px"></span>
+        <div class="ms-2">
+          <b id="lblFormaPagamentoSelecionada"></b><br />
+          <small
+            id="lblDescFormaPagamentoSelecionada"
+            class="text-muted"
+          ></small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botão abrir modal formas de pagamento -->
+    <div id="cardAddFormaPagamento" class="card mt-2 p-2">
+      <a href="#!" onclick="carrinho.method.abrirModalFormaPagamento()">
+        Selecionar forma de pagamento
+      </a>
+    </div>
+
     <!-- Modal actions Pagamento -->
     <div class="modal-actions hidden" id="modalActionsFormaPagamento">
       <div
