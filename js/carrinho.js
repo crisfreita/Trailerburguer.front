@@ -698,37 +698,20 @@ carrinho.method = {
   // carrega as formas de pagamento na tela
   carregarFormasPagamento: (list) => {
     if (list.length > 0) {
-      // antes, valida se tem a forma de pagamento online ativa
+      // identifica se existe pagamento online
+      PAGAMENTO_ONLINE = list.some((e) => e.idformapagamento === 5);
 
-      let pagamentoonline = list.filter((e) => {
-        return e.idformapagamento === 5;
-      });
-
-      // existe pagamento online
-
-      if (pagamentoonline.length > 0) {
-        // aculta a opção de 'Como prefere pagar?'
-        document.querySelector("#container-como-pagar").classList.add("hidden");
-        document.getElementById("lblFazerPedido").innerText =
-          "Realizar Pagamento";
-        PAGAMENTO_ONLINE = true;
-      } else {
-        // exibe a opção de 'Como prefere pagar?'
-        document
-          .querySelector("#container-como-pagar")
-          .classList.remove("hidden");
-        document.getElementById("lblFazerPedido").innerText = "Fazer Pedido";
-        PAGAMENTO_ONLINE = false;
-      }
+      // limpa antes de preencher
+      document.querySelector(
+        "#modalActionsFormaPagamento .container-modal-actions"
+      ).innerHTML = "";
 
       list.forEach((e, i) => {
         let temp = `<a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">${e.nome}</a>`;
-
         document.querySelector(
           "#modalActionsFormaPagamento .container-modal-actions"
         ).innerHTML += temp;
 
-        // útlimo item
         if (i + 1 == list.length) {
           document.querySelector(
             "#modalActionsFormaPagamento .container-modal-actions"
@@ -759,20 +742,27 @@ carrinho.method = {
       document.querySelector("#lblFormaPagamentoSelecionada").innerText =
         FORMA_SELECIONADA.nome;
 
-      // se for Pix
-      if (FORMA_SELECIONADA.idformapagamento == 1) {
+      // PAGAMENTO ONLINE
+      if (FORMA_SELECIONADA.idformapagamento == 5) {
+        document.querySelector("#lblDescFormaPagamentoSelecionada").innerText =
+          "Pagamento online via Mercado Pago";
+        document.querySelector(
+          "#iconFormaPagamentoSelecionada"
+        ).innerHTML = `<i class="fas fa-qrcode"></i>`;
+      }
+      // PIX
+      else if (FORMA_SELECIONADA.idformapagamento == 1) {
         document.querySelector(
           "#lblDescFormaPagamentoSelecionada"
-        ).innerText = `Chave PiX 33998589550 Favor enviar o comprovante após o pagamento.`;
+        ).innerText = `Chave PIX 33998589550 — envie o comprovante após o pagamento.`;
         document.querySelector(
           "#iconFormaPagamentoSelecionada"
         ).innerHTML = `<i class="fas fa-receipt"></i>`;
       }
-      // se for dinheiro
+      // DINHEIRO
       else if (FORMA_SELECIONADA.idformapagamento == 2) {
         let troco = prompt("Qual o valor do troco?");
         if (troco != null) {
-          // valida se o troco está correto
           let _teste = parseFloat(troco);
 
           if (isNaN(_teste) || troco.trim() == "" || _teste <= 1) {
@@ -798,7 +788,7 @@ carrinho.method = {
           "#iconFormaPagamentoSelecionada"
         ).innerHTML = `<i class="fas fa-coins"></i>`;
       }
-      // se for cartão
+      // CRÉDITO / DÉBITO
       else {
         document.querySelector(
           "#lblDescFormaPagamentoSelecionada"
@@ -814,7 +804,6 @@ carrinho.method = {
       document
         .querySelector("#cardAddFormaPagamento")
         .classList.remove("hidden");
-
       FORMA_SELECIONADA = null;
     }
 
@@ -842,8 +831,7 @@ carrinho.method = {
   // botão de realizar o pedido
   fazerPedido: () => {
     if (CARRINHO_ATUAL.length > 0) {
-      // faz as validações
-
+      // validações iniciais ↓ (MANTIVEMOS IGUAL)
       let checkEntrega = document.querySelector("#chkEntrega").checked;
       let checkRetirada = document.querySelector("#chkRetirada").checked;
 
@@ -852,9 +840,7 @@ carrinho.method = {
         return;
       }
 
-      // obtem o endereco selecionado do localstorage
       let enderecoAtual = app.method.obterValorSessao("address");
-
       if (checkEntrega && enderecoAtual == undefined) {
         app.method.mensagem("Informe o endereço de entrega.");
         return;
@@ -876,7 +862,7 @@ carrinho.method = {
         return;
       }
 
-      // 🔹 CALCULA O TOTAL
+      // CALCULA O TOTAL
       let valorTotal = 0;
       CARRINHO_ATUAL.forEach((item) => {
         let subtotal = item.quantidade * item.valor;
@@ -890,7 +876,6 @@ carrinho.method = {
         valorTotal += subtotal;
       });
 
-      // adiciona taxa de entrega se houver
       if (checkEntrega && TAXA_ATUAL > 0) {
         valorTotal += TAXA_ATUAL;
       }
@@ -909,61 +894,54 @@ carrinho.method = {
         total: valorTotal,
       };
 
-      // se for pagamento online
-      if (PAGAMENTO_ONLINE) {
-        // seta a forma de pagamento
+      // 🔥 TRATAMENTO DO PAGAMENTO ONLINE
+      if (FORMA_SELECIONADA && FORMA_SELECIONADA.idformapagamento == 5) {
         dados.idformapagamento = 5;
 
-        // salva a sub order (antes da order) para obter os dados mais tarde
+        // salva a sub order para usar em pagamento.html
         app.method.gravarValorSessao(JSON.stringify(dados), "sub-order");
 
-        // avança para a próxima página para selecionar a forma de pagamento
         window.location.href = "/pagamento.html";
-      } else {
-        // se não for, continua o fluxo normal
-
-        if (FORMA_SELECIONADA == null) {
-          app.method.mensagem("Selecione a forma de pagamento.");
-          return;
-        }
-
-        dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
-
-        // tudo ok, faz o pedido
-        app.method.loading(true);
-
-        app.method.post(
-          "/pedido",
-          JSON.stringify(dados),
-          (response) => {
-            console.log("response", response);
-            app.method.loading(false);
-
-            if (response.status === "error") {
-              app.method.mensagem(response.message);
-              return;
-            }
-
-            app.method.mensagem("Pedido realizado!", "green");
-
-            // salva o novo pedido
-            dados.order = response.order;
-
-            app.method.gravarValorSessao(JSON.stringify(dados), "order");
-
-            setTimeout(() => {
-              // limpa o carrinho
-              localStorage.removeItem("cart");
-              window.location.href = "/pedido.html";
-            }, 1000);
-          },
-          (error) => {
-            console.log("error", error);
-            app.method.loading(false);
-          },
-          true
-        );
+        return;
       }
+
+      // 🔥 OUTROS PAGAMENTOS (fluxo normal)
+      if (FORMA_SELECIONADA == null) {
+        app.method.mensagem("Selecione a forma de pagamento.");
+        return;
+      }
+
+      dados.idformapagamento = FORMA_SELECIONADA.idformapagamento;
+
+      app.method.loading(true);
+
+      app.method.post(
+        "/pedido",
+        JSON.stringify(dados),
+        (response) => {
+          app.method.loading(false);
+
+          if (response.status === "error") {
+            app.method.mensagem(response.message);
+            return;
+          }
+
+          app.method.mensagem("Pedido realizado!", "green");
+
+          dados.order = response.order;
+          app.method.gravarValorSessao(JSON.stringify(dados), "order");
+
+          setTimeout(() => {
+            localStorage.removeItem("cart");
+            window.location.href = "/pedido.html";
+          }, 1000);
+        },
+        (error) => {
+          console.log("error", error);
+          app.method.loading(false);
+        },
+        true
+      );
     } else {
       app.method.mensagem("Nenhum item no carrinho.");
     }
