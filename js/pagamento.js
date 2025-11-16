@@ -822,12 +822,6 @@ pagamento.method = {
           );
           return;
         }
-
-        // 🔹 Caso genérico (nenhuma das opções acima)
-        app.method.mensagem(
-          "Não foi possível processar o pagamento. Tente novamente.",
-          "red"
-        );
       },
       (error) => {
         console.log("error", error);
