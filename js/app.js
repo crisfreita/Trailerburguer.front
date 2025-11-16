@@ -44,25 +44,28 @@ app.method = {
   // centraliza as chamadas de POST
   post: (url, dados, callbackSuccess, callbackError, login = false) => {
     try {
-      if (app.method.validaToken(login)) {
+      // 🔥 Se login = true, exige token. Se login = false, não coloca Authorization.
+      if (!login || app.method.validaToken(login)) {
         let xhr = new XMLHttpRequest();
         xhr.open("POST", url);
         xhr.setRequestHeader("Content-Type", "application/json;charset=utf-8");
-        xhr.setRequestHeader(
-          "Authorization",
-          app.method.obterValorSessao("token")
-        );
+
+        // 👉 Só envia o token se login=true
+        if (login) {
+          xhr.setRequestHeader(
+            "Authorization",
+            app.method.obterValorSessao("token")
+          );
+        }
 
         xhr.onreadystatechange = function () {
           if (this.readyState == 4) {
             if (this.status == 200) {
               return callbackSuccess(JSON.parse(xhr.responseText));
             } else {
-              // se o retorno for não autorizado, redireciona o usuário para o login
-              if (xhr.status == 401) {
+              if (xhr.status == 401 && login) {
                 app.method.logout();
               }
-
               return callbackError(xhr.responseText);
             }
           }
