@@ -697,28 +697,35 @@ carrinho.method = {
 
   // carrega as formas de pagamento na tela
   carregarFormasPagamento: (list) => {
-    if (list.length > 0) {
-      document.querySelector(
-        "#modalActionsFormaPagamento .container-modal-actions"
-      ).innerHTML = "";
+    console.log("Formas recebidas:", list);
 
-      list.forEach((e, i) => {
-        let temp = `<a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">${e.nome}</a>`;
+    const container = document.querySelector(
+      "#modalActionsFormaPagamento .container-modal-actions"
+    );
 
-        document.querySelector(
-          "#modalActionsFormaPagamento .container-modal-actions"
-        ).innerHTML += temp;
+    // limpa antes
+    container.innerHTML = "";
 
-        if (i + 1 == list.length) {
-          document.querySelector(
-            "#modalActionsFormaPagamento .container-modal-actions"
-          ).innerHTML += `
-          <a href="#!" class="color-red" onclick="carrinho.method.selecionarFormaPagamento('')">Remover</a>`;
-        }
-      });
-    } else {
-      document.querySelector("#formasPagamento").remove();
+    if (list.length === 0) {
+      document.querySelector("#formasPagamento").classList.add("hidden");
+      return;
     }
+
+    document.querySelector("#formasPagamento").classList.remove("hidden");
+
+    // Preenche opções
+    list.forEach((e, i) => {
+      container.innerHTML += `
+      <a href="#!" onclick="carrinho.method.selecionarFormaPagamento('${e.idformapagamento}')">
+        ${e.nome}
+      </a>`;
+    });
+
+    // botão remover
+    container.innerHTML += `
+    <a href="#!" class="color-red" onclick="carrinho.method.selecionarFormaPagamento('')">
+      Remover
+    </a>`;
   },
 
   // método que seleciona a forma de pagamento

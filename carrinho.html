@@ -387,13 +387,32 @@
       </div>
     </div>
 
-    <!-- Modal actions Pagamento -->
-    <div class="modal-actions hidden" id="modalActionsFormaPagamento">
+    <!-- FORMAS DE PAGAMENTO -->
+    <div id="formasPagamento" class="mt-3">
       <div
-        class="backdrop"
-        onclick="carrinho.method.fecharModalActionsFormaPagamento()"
-      ></div>
-      <div class="width-fix container-modal-actions"></div>
+        id="cardAddFormaPagamento"
+        class="card card-select"
+        onclick="carrinho.method.abrirModalFormaPagamento()"
+      >
+        <div class="infos-produto-opcional">
+          <p class="mb-0 color-primary">
+            <i class="fas fa-credit-card"></i>&nbsp; Selecione a forma de
+            pagamento
+          </p>
+        </div>
+      </div>
+
+      <div
+        id="cardFormaPagamentoSelecionada"
+        class="card card-select hidden"
+        onclick="carrinho.method.abrirModalFormaPagamento()"
+      >
+        <div class="infos-produto-opcional">
+          <p class="mb-0 color-primary" id="lblFormaPagamentoSelecionada"></p>
+          <small id="lblDescFormaPagamentoSelecionada"></small>
+        </div>
+        <div id="iconFormaPagamentoSelecionada"></div>
+      </div>
     </div>
 
     <script type="text/javascript" src="./js/jquery.min.js"></script>
