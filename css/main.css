@@ -58,29 +58,105 @@ b {
   padding-right: 0px !important;
 }
 
+/* ===== BANNER SUPERIOR ===== */
+
 .bg-top {
   width: 100%;
-  height: 180px; /* altura ideal para o banner */
-  background: #6b23b5; /* roxo */
+  height: 180px;
+  background: #6b23b5;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
+
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative; /* necessário para layout */
+
+  position: relative;
   z-index: 1;
 }
 
 .banner-loja {
-  height: 120px;
+  height: 130px;
   object-fit: contain;
   margin-top: 10px;
 }
 
+/* ===== CARD DA LOJA ===== */
+
 .header-loja {
-  margin-top: -50px; /* card flutuando sobre o roxo */
+  margin-top: -50px; /* suspende o card sobre o roxo */
   position: relative;
   z-index: 10;
+}
+
+.header-loja .card {
+  border-radius: 22px;
+  padding: 18px 20px;
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border: none;
+}
+
+/* LOGO */
+.container-img {
+  width: 60px;
+  height: 60px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 18px;
+  margin-right: 15px;
+}
+
+/* INFORMACOES */
+.infos h1 {
+  font-size: 19px;
+  margin-bottom: 3px;
+  font-weight: 700;
+  color: #000;
+}
+
+.infos-sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.link {
+  color: #ffcb32 !important;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+/* STATUS */
+.status-open {
+  font-size: 14px;
+  color: #43d96b;
+  margin-bottom: 0;
+}
+
+/* WHATSAPP */
+.whatsapp-icon i {
+  font-size: 25px;
+  color: #25d366;
+}
+
+/* ===== CATEGORIAS ===== */
+
+.categoria {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-background);
+  padding-top: 15px;
+}
+
+/* ===== ITENS DO CARDAPIO ===== */
+
+.container-group .card {
+  border-radius: 18px;
+  padding: 17px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .container-mensagens {
@@ -159,38 +235,10 @@ b {
   border: none !important;
 }
 
-.container-img {
-  width: 60px;
-  height: 60px;
-  background-position: center;
-  background-repeat: no-repeat;
-  margin-right: 20px;
-  border-radius: 20px;
-}
-
-.infos {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
 .infos h1 {
   font-size: 18px;
   margin-bottom: 5px;
   color: var(--color-black);
-}
-
-.infos-sub {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.status-open {
-  font-size: 14px;
-  margin-bottom: 0px;
-  color: var(--color-green);
 }
 
 .status-open.closed {
@@ -201,17 +249,6 @@ b {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.whatsapp-icon i {
-  font-size: 30px;
-  color: green; /* ou qualquer cor que preferir */
-}
-
-.link {
-  text-decoration: none !important;
-  font-size: 14px;
-  color: var(--color-primary) !important;
 }
 
 section.categoria {
