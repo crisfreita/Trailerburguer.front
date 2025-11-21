@@ -63,7 +63,7 @@ b {
 /* BG TOP – ocupa tudo */
 .bg-top {
   width: 100%;
-  height: -200px;
+  height: 260px;
   background: #e63939; /* vermelho */
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
@@ -74,7 +74,7 @@ b {
 /* Logo TUBA sobreposto acima do bg-top */
 .banner-loja {
   position: absolute;
-  top: -90px; /* sobe por cima do bg-top */
+  top: -80px; /* sobe por cima do bg-top */
   left: 50%;
   transform: translateX(-50%);
   height: 250px;
