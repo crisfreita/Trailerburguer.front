@@ -68,11 +68,12 @@ b {
   justify-content: center;
   align-items: flex-end;
   padding-bottom: 10px;
+  margin-top: 90px; /* mais baixo */
 }
 
 /* Banner do topo */
 .banner-loja {
-  height: 110px;
+  height: 210px;
   object-fit: contain;
 }
 
