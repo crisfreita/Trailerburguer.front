@@ -59,28 +59,12 @@ b {
 }
 
 .bg-top {
-  width: 100%;
-  height: 160px;
-  background: #6b23b5 !important;
-  border-bottom-left-radius: 30px;
-  border-bottom-right-radius: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Banner do topo */
-.banner-loja {
-  height: 130px;
-  object-fit: contain;
-  margin-top: -10px; /* centraliza melhor */
-}
-
-/* DESCE o card da loja */
-.header-loja {
-  margin-top: -40px; /* altura ideal para não invadir o banner */
-  position: relative;
-  z-index: 10;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  height: 110px;
+  background-color: var(--color-red);
 }
 
 .container-mensagens {
@@ -88,15 +72,6 @@ b {
   right: 20px;
   top: 20px;
   z-index: 9999;
-}
-
-.card-loja {
-  border-radius: 20px;
-  padding: 15px 20px;
-  font-size: 20px;
-  box-shadow: var(--box-shadow) !important;
-  border: none !important;
-  margin-top: -90px; /* altura ideal para não invadir o banner */
 }
 
 /* Container do Swiper */
