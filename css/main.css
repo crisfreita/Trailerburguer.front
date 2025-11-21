@@ -77,7 +77,7 @@ b {
   top: -90px; /* sobe por cima do bg-top */
   left: 50%;
   transform: translateX(-50%);
-  height: 280px;
+  height: 250px;
   z-index: 5; /* para ficar acima de tudo */
 }
 
