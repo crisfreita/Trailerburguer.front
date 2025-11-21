@@ -90,6 +90,17 @@ b {
   z-index: 9999;
 }
 
+.card-loja {
+  background-color: var(--color-white);
+  border-radius: 20px;
+  padding: 15px 20px;
+  font-size: 20px;
+  box-shadow: var(--box-shadow) !important;
+  border: none !important;
+  display: flex;
+  align-items: center;
+}
+
 /* Container do Swiper */
 .swiper-container {
   width: 100%;
