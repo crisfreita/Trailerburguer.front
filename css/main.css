@@ -62,29 +62,26 @@ b {
 
 .bg-top {
   width: 100%;
-  height: 180px;
-  background: #6b23b5;
+  height: 170px; /* aumentar área do banner */
+  background: #e63939; /* sua cor atual */
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
-
   display: flex;
   justify-content: center;
-  align-items: center;
-
-  position: relative;
-  z-index: 1;
+  align-items: flex-end;
+  padding-bottom: 10px;
 }
 
 .banner-loja {
-  height: 130px;
+  height: 115px;
   object-fit: contain;
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 /* ===== CARD DA LOJA ===== */
 
 .header-loja {
-  margin-top: -50px; /* suspende o card sobre o roxo */
+  margin-top: -45px;
   position: relative;
   z-index: 10;
 }
