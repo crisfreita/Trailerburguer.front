@@ -10,24 +10,6 @@
     <link rel="stylesheet" href="./css/fontawesome.css" />
     <link rel="stylesheet" href="./css/animate.css" />
     <link rel="stylesheet" href="./css/main.css" />
-
-    <!-- ✅ ANTI-CACHE AUTOMÁTICO -->
-    <script>
-      (function () {
-        const version = Date.now();
-        document.querySelectorAll("link[href], script[src]").forEach((tag) => {
-          let attr = tag.tagName === "SCRIPT" ? "src" : "href";
-          let url = tag.getAttribute(attr);
-          if (!url) return;
-          if (url.startsWith("http")) return; // evita CDN
-          tag.setAttribute(
-            attr,
-            url + (url.includes("?") ? "&v=" + version : "?v=" + version)
-          );
-        });
-      })();
-    </script>
-    <!-- ✅ FIM ANTI-CACHE -->
   </head>
 
   <body>
@@ -35,7 +17,12 @@
       <img src="./img/logodelivery.png" width="100" />
     </div>
 
-    <div class="bg-top"></div>
+    <div class="bg-top">
+      <img
+        src="./img/Imagem do WhatsApp de 2025-11-20 à(s) 17.11.07_bee734f4.jpg"
+        class="banner-loja"
+      />
+    </div>
 
     <header class="width-fix mt-5">
       <div class="card">
