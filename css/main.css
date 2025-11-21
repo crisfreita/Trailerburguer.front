@@ -73,7 +73,7 @@ b {
 }
 
 .banner-loja {
-  height: 115px;
+  height: 315px;
   object-fit: contain;
   margin-top: 0;
 }
@@ -92,7 +92,7 @@ b {
   background: #ffffff;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   border: none;
-  margin-top: 60px;
+  margin-top: 90px;
 }
 
 /* LOGO */
