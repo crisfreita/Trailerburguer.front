@@ -91,14 +91,12 @@ b {
 }
 
 .card-loja {
-  background-color: var(--color-white);
   border-radius: 20px;
   padding: 15px 20px;
   font-size: 20px;
   box-shadow: var(--box-shadow) !important;
   border: none !important;
-  display: flex;
-  align-items: center;
+  margin-top: -90px; /* altura ideal para não invadir o banner */
 }
 
 /* Container do Swiper */
