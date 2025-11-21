@@ -74,7 +74,7 @@ b {
 /* Logo TUBA sobreposto acima do bg-top */
 .banner-loja {
   position: absolute;
-  top: 5px; /* sobe por cima do bg-top */
+  top: 70px; /* sobe por cima do bg-top */
   left: 50%;
   transform: translateX(-50%);
   height: 280px;
