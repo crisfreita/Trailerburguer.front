@@ -63,8 +63,7 @@ b {
 /* BG TOP – ocupa tudo */
 .bg-top {
   width: 100%;
-  height: 100px !important; /* Ajuste aqui! */
-  top: -50px !important;
+  height: 280px; /* Ajuste aqui! */
   background: #e63939;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
