@@ -69,6 +69,7 @@ b {
   border-bottom-right-radius: 30px;
   position: relative; /* necessário */
   z-index: 1;
+  top: -70px;
 }
 
 /* Logo TUBA sobreposto acima do bg-top */
