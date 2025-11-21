@@ -63,13 +63,12 @@ b {
 /* BG TOP – ocupa tudo */
 .bg-top {
   width: 100%;
-  height: 300px; /* Aumente aqui */
-  background: #e63939; /* vermelho */
+  height: 300px;
+  background: #e63939;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
-  position: relative; /* necessário */
+  position: relative;
   z-index: 1;
-  top: -70px;
 }
 
 /* Logo TUBA sobreposto acima do bg-top */
