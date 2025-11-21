@@ -68,13 +68,20 @@ b {
   justify-content: center;
   align-items: flex-end;
   padding-bottom: 10px;
-  margin-top: 90px; /* mais baixo */
+  margin-top: 0 !important;
 }
 
 /* Banner do topo */
 .banner-loja {
   height: 210px;
   object-fit: contain;
+}
+
+/* DESCE o card da loja */
+.header-loja {
+  margin-top: -70px;
+  position: relative;
+  z-index: 10;
 }
 
 .container-mensagens {
@@ -151,7 +158,6 @@ b {
   font-size: 20px;
   box-shadow: var(--box-shadow) !important;
   border: none !important;
-  margin-top: 90px; /* mais baixo */
 }
 
 .container-img {
