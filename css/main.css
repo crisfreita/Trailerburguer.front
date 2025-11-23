@@ -72,7 +72,7 @@ b {
 
 .header-top {
   width: 100%;
-  height: 280px; /* Ajuste aqui! */
+  height: 280px;
   background: #e63939;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
@@ -80,21 +80,22 @@ b {
   z-index: 1;
   margin-top: 70px;
 }
-/* Logo TUBA sobreposto acima do bg-top */
+
+/* Logo TUBA */
 .banner-loja {
   position: absolute;
-  top: -140px; /* sobe por cima do bg-top */
+  top: -60px;
   left: 50%;
   transform: translateX(-50%);
-  height: 250px;
-  z-index: 5; /* para ficar acima de tudo */
+  height: 180px;
+  z-index: 5;
 }
 
-/* Card da loja */
+/* Encaixe do card */
 .header-loja {
-  margin-top: -40px; /* card entra um pouco no bg-top */
+  margin-top: -50px;
   position: relative;
-  z-index: 10; /* acima do banner */
+  z-index: 10;
 }
 
 .header-loja .card {
@@ -103,7 +104,6 @@ b {
   background: #ffffff;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   border: none;
-  margin-top: 105px;
 }
 
 /* LOGO */
