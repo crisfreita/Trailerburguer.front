@@ -74,7 +74,7 @@ b {
 .header-top {
   width: 100%;
   height: 300px; /* ajuste aqui */
-  background: #e63939;
+  background-color: var(--color-red);
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
   position: relative;
